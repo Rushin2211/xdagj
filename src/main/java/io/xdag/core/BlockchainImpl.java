@@ -1110,10 +1110,6 @@ public class BlockchainImpl implements Blockchain {
             return block.getInfo().getDifficulty();
         }
         //TX block would not set diff, fix a diff = 1;
-//        if (!block.getInputs().isEmpty()) {
-//            return BigInteger.ONE;
-//        }
-
         if ((block.getInfo().flags & BI_EXTRA) == 0) {
             return BigInteger.ONE;
         }
