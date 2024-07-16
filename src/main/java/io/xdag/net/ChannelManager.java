@@ -207,6 +207,7 @@ public class ChannelManager {
 
     // TODO:怎么发送 目前是发给除receive的节点
     public void sendNewBlock(BlockWrapper blockWrapper) {
+        log.debug("Send new block...");
 //        Node receive;
 //        Peer blockPeer = blockWrapper.getRemotePeer();
 //        Node node = kernel.getClient().getNode();
