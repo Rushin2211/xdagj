@@ -248,6 +248,8 @@ public class XdagPow implements PoW, Listener, Runnable {
             return;
         }
 
+        log.debug("Receive new pretop: {}", Bytes32.wrap(pretop).toHexString());
+
         // prevent duplicate event
         if (globalPretop == null || !equalBytes(pretop.toArray(), globalPretop.toArray())) {
             log.debug("update global pretop:{}", Bytes32.wrap(pretop).toHexString());
@@ -296,6 +298,7 @@ public class XdagPow implements PoW, Listener, Runnable {
         Block b = generateBlock.get();
         // stop generate main block
         isWorking = false;
+        log.debug("Stop generate main block...");
         if (b != null) {
             Block newBlock = new Block(new XdagBlock(b.toBytes()));
             log.debug("Broadcast locally generated blockchain, waiting to be verified. block hash = [{}]", newBlock.getHash().toHexString());
@@ -372,6 +375,7 @@ public class XdagPow implements PoW, Listener, Runnable {
     @Override
     public void run() {
         log.info("Main PoW start ....");
+        log.debug("Main PoW start ....");
         timer.timeout(XdagTime.getEndOfEpoch(XdagTime.getCurrentTimestamp() + 64));
         // init pretop
         globalPretop = null;
@@ -522,6 +526,7 @@ public class XdagPow implements PoW, Listener, Runnable {
         }
 
         public void broadcast(BlockWrapper bw) {
+            log.debug("Checking if the message is in the broadcast queue...");
             if (!queue.offer(bw)) {
                 log.error("Failed to add a message to the broadcast queue: block = {}", bw.getBlock()
                         .getHash().toHexString());
