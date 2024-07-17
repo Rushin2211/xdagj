@@ -374,7 +374,6 @@ public class XdagPow implements PoW, Listener, Runnable {
 
     @Override
     public void run() {
-        log.info("Main PoW start ....");
         log.debug("Main PoW start ....");
         timer.timeout(XdagTime.getEndOfEpoch(XdagTime.getCurrentTimestamp() + 64));
         // init pretop
@@ -526,9 +525,11 @@ public class XdagPow implements PoW, Listener, Runnable {
         }
 
         public void broadcast(BlockWrapper bw) {
-            log.debug("Checking if the message is in the broadcast queue...");
             if (!queue.offer(bw)) {
                 log.error("Failed to add a message to the broadcast queue: block = {}", bw.getBlock()
+                        .getHash().toHexString());
+            } else {
+                log.debug("Succeeded to add a message to the broadcast queue: block = {}", bw.getBlock()
                         .getHash().toHexString());
             }
         }
