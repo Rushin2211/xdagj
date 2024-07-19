@@ -1002,6 +1002,9 @@ public class BlockchainImpl implements Blockchain {
         List<Address> refs = Lists.newArrayList();
         if (preTop != null) {
             refs.add(preTop);
+            log.debug("Current epoch is: {}, add pretop: {}", XdagTime.getEpoch(sendTime[0]), refs);
+        } else {
+            log.debug("Pretop not added in epoch: {}", XdagTime.getEpoch(sendTime[0]));
         }
 
         if (coinbase == null) {
@@ -1012,6 +1015,7 @@ public class BlockchainImpl implements Blockchain {
         List<Address> orphans = getBlockFromOrphanPool(16 - res, sendTime);
         if (CollectionUtils.isNotEmpty(orphans)) {
             refs.addAll(orphans);
+            log.debug("Added orphan: {}", orphans);
         }
         return new Block(kernel.getConfig(), sendTime[0], null, refs, true, null,
                 kernel.getConfig().getNodeSpec().getNodeTag(), -1, XAmount.ZERO);
