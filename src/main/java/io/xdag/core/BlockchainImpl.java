@@ -117,6 +117,8 @@ public class BlockchainImpl implements Blockchain {
     @Getter
     private byte[] preSeed;
 
+    private Address topHashLow;
+
     public BlockchainImpl(Kernel kernel) {
         this.kernel = kernel;
         this.wallet = kernel.getWallet();
@@ -1002,9 +1004,10 @@ public class BlockchainImpl implements Blockchain {
         List<Address> refs = Lists.newArrayList();
         if (preTop != null) {
             refs.add(preTop);
-            log.debug("Current epoch is: {}, add pretop: {}", XdagTime.getEpoch(sendTime[0]), refs);
+            log.debug("Current epoch is: {}, update pretop: {}", XdagTime.getEpoch(sendTime[0]), refs);
         } else {
-            log.debug("Pretop not added in epoch: {}", XdagTime.getEpoch(sendTime[0]));
+            log.debug("Pretop not update in epoch: {}, the current pretop is: {}",
+                    XdagTime.getEpoch(sendTime[0]), refs);
         }
 
         if (coinbase == null) {
