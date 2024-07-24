@@ -117,8 +117,6 @@ public class BlockchainImpl implements Blockchain {
     @Getter
     private byte[] preSeed;
 
-    private Address topHashLow;
-
     public BlockchainImpl(Kernel kernel) {
         this.kernel = kernel;
         this.wallet = kernel.getWallet();
