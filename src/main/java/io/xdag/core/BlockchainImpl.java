@@ -117,6 +117,8 @@ public class BlockchainImpl implements Blockchain {
     @Getter
     private byte[] preSeed;
 
+    private Bytes32 pretopHashLow;
+
     public BlockchainImpl(Kernel kernel) {
         this.kernel = kernel;
         this.wallet = kernel.getWallet();
@@ -410,6 +412,11 @@ public class BlockchainImpl implements Blockchain {
                         Bytes32.wrap(xdagTopStatus.getTop()), false);
                 BigInteger currentTopDiff = xdagTopStatus.getTopDiff();
                 log.debug("update top: {}", block.getHashLow());
+
+                pretopHashLow = block.getHashLow();
+
+                log.debug("Pretop hashlow: {}", pretopHashLow);
+
                 // update Top
                 xdagTopStatus.setTopDiff(block.getInfo().getDifficulty());
                 xdagTopStatus.setTop(block.getHashLow().toArray());
@@ -991,8 +998,10 @@ public class BlockchainImpl implements Blockchain {
         sendTime[0] = XdagTime.getMainTime();
         Address preTop = null;
         Bytes32 pretopHash = getPreTopMainBlockForLink(sendTime[0]);
+        log.debug("Pretop hash: {}", pretopHash);
         if (pretopHash != null) {
             preTop = new Address(Bytes32.wrap(pretopHash), XdagField.FieldType.XDAG_FIELD_OUT, false);
+            log.debug("Pretop: {}", preTop);
             res++;
         }
         // The coinbase address of the block defaults to the default address of the node wallet
@@ -1000,13 +1009,17 @@ public class BlockchainImpl implements Blockchain {
                 FieldType.XDAG_FIELD_COINBASE,
                 true);
         List<Address> refs = Lists.newArrayList();
+        Address preTopNew = new Address(Bytes32.wrap(pretopHashLow), XDAG_FIELD_OUT, false);
         if (preTop != null) {
             refs.add(preTop);
-            log.debug("Current epoch is: {}, update pretop: {}", XdagTime.getEpoch(sendTime[0]), refs);
+            log.debug("Current epoch is: {}, update pretop: {}", XdagTime.getEpoch(sendTime[0]), preTop);
         } else {
-            log.debug("Pretop not update in epoch: {}, the current pretop is: {}",
-                    XdagTime.getEpoch(sendTime[0]), refs);
+//            Address preTopNew = new Address(Bytes32.wrap(pretopHashLow), XDAG_FIELD_OUT, false);
+            refs.add(preTopNew);
+            log.debug("Pretop not update in epoch: {}, update pretop: {}", XdagTime.getEpoch(sendTime[0]), preTopNew);
         }
+
+        log.debug("Pretop new: {}", preTopNew);
 
         if (coinbase == null) {
             throw new ArithmeticException("Invalidate main block!");
