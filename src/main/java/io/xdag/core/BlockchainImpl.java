@@ -1067,6 +1067,8 @@ public class BlockchainImpl implements Blockchain {
         }
 
         topInfo = getBlockByHash(Bytes32.wrap(xdagTopStatus.getTop()), false);
+        log.debug("xdagTopStatus.getTop: {}", xdagTopStatus.getTop());
+        log.debug("topInfo: {}", topInfo);
         if (topInfo == null) {
             log.debug("topInfo == null");
             return null;
