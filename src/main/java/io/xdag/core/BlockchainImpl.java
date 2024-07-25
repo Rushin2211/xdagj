@@ -1273,15 +1273,21 @@ public class BlockchainImpl implements Blockchain {
     @Override
     public Block getBlockByHash(Bytes32 hashlow, boolean isRaw) {
         if (hashlow == null) {
+            log.debug("hashlow == null");
             return null;
         }
         // ensure that hashlow is hashlow
         MutableBytes32 keyHashlow = MutableBytes32.create();
         keyHashlow.set(8, Objects.requireNonNull(hashlow).slice(8, 24));
+        log.debug("keyHashlow: {}", keyHashlow);
 
         Block b = memOrphanPool.get(Bytes32.wrap(keyHashlow));
+
         if (b == null) {
             b = blockStore.getBlockByHash(keyHashlow, isRaw);
+            log.debug("b == null, b: {}", b);
+        } else {
+            log.debug("b != null, b: {}", b);
         }
         return b;
     }
