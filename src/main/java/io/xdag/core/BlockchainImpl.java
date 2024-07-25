@@ -1062,11 +1062,13 @@ public class BlockchainImpl implements Blockchain {
         long mainTime = XdagTime.getEpoch(sendTime);
         Block topInfo;
         if (xdagTopStatus.getTop() == null) {
+            log.debug("xdagTopStatus.getTop() == null");
             return null;
         }
 
         topInfo = getBlockByHash(Bytes32.wrap(xdagTopStatus.getTop()), false);
         if (topInfo == null) {
+            log.debug("topInfo == null");
             return null;
         }
         if (XdagTime.getEpoch(topInfo.getTimestamp()) == mainTime) {
@@ -1712,7 +1714,7 @@ public class BlockchainImpl implements Blockchain {
         }
     }
 
-    // TODO : accept amount to block which in snapshot
+    // TODO : accept amount to block which in snapshot-5
     private void acceptAmount(Block block, XAmount amount) {
         XAmount oldAmount = block.getInfo().getAmount();
         block.getInfo().setAmount(block.getInfo().getAmount().add(amount));
