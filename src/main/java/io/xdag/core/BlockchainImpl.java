@@ -1282,9 +1282,10 @@ public class BlockchainImpl implements Blockchain {
 
         if (b == null) {
             b = blockStore.getBlockByHash(keyHashlow, isRaw);
-            if (b == null) {
-                log.debug("b == null, keyHashlow: {}, isRaw: {}", keyHashlow, isRaw);
-            }
+        }
+
+        if (b == null) {
+            log.debug("b: {}, keyHashlow: {}, isRaw: {}", b, keyHashlow, isRaw);
         }
         return b;
     }
