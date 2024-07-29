@@ -516,8 +516,10 @@ public class BlockStoreImpl implements BlockStore {
 
     public Block getBlockByHash(Bytes32 hashlow, boolean isRaw) {
         if (isRaw) {
+            log.debug("Raw Block By Hash: {}", getRawBlockByHash(hashlow));
             return getRawBlockByHash(hashlow);
         }
+        log.debug("Block Info By Hash: {}", getBlockInfoByHash(hashlow));
         return getBlockInfoByHash(hashlow);
     }
 
@@ -540,15 +542,20 @@ public class BlockStoreImpl implements BlockStore {
 
     public Block getBlockInfoByHash(Bytes32 hashlow) {
         if (!hasBlockInfo(hashlow)) {
+            log.debug("!hasBlockInfo");
             return null;
         }
         BlockInfo blockInfo = null;
         byte[] value = indexSource.get(BytesUtils.merge(HASH_BLOCK_INFO, hashlow.toArray()));
+        log.debug("value: {}", value);
+        log.debug("HASH_BLOCK_INFO: {}, hashlow to array: {}", HASH_BLOCK_INFO, hashlow.toArray());
+        log.debug("value: {}", value);
         if (value == null) {
             return null;
         } else {
             try {
                 blockInfo = (BlockInfo) deserialize(value, BlockInfo.class);
+                log.debug("blockInfo: {}", blockInfo);
             } catch (DeserializationException e) {
                 log.error("hash low:{}", hashlow.toHexString());
                 log.error("can't deserialize data:{}", Hex.toHexString(value));
