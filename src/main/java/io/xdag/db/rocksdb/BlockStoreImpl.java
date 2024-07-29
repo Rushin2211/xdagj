@@ -549,7 +549,7 @@ public class BlockStoreImpl implements BlockStore {
         byte[] value = indexSource.get(BytesUtils.merge(HASH_BLOCK_INFO, hashlow.toArray()));
         log.debug("value: {}", value);
         log.debug("HASH_BLOCK_INFO: {}, hashlow to array: {}", HASH_BLOCK_INFO, hashlow.toArray());
-        log.debug("value: {}", value);
+        log.debug("merge: {}", BytesUtils.merge(HASH_BLOCK_INFO, hashlow.toArray()));
         if (value == null) {
             return null;
         } else {
