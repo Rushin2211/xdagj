@@ -1067,8 +1067,6 @@ public class BlockchainImpl implements Blockchain {
         }
 
         topInfo = getBlockByHash(Bytes32.wrap(xdagTopStatus.getTop()), false);
-        log.debug("xdagTopStatus.getTop: {}, length: {}", xdagTopStatus.getTop(), xdagTopStatus.getTop().length);
-        log.debug("Bytes32.wrap(xdagTopStatus.getTop()): {}", Bytes32.wrap(xdagTopStatus.getTop()));
         log.debug("topInfo: {}", topInfo);
         if (topInfo == null) {
             log.debug("topInfo == null");
@@ -1284,7 +1282,9 @@ public class BlockchainImpl implements Blockchain {
 
         if (b == null) {
             b = blockStore.getBlockByHash(keyHashlow, isRaw);
-            log.debug("b == null, b: {}", b);
+            if (b == null) {
+                log.debug("b == null, keyHashlow: {}, isRaw: {}", keyHashlow, isRaw);
+            }
         }
         return b;
     }

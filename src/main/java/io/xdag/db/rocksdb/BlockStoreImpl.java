@@ -516,10 +516,8 @@ public class BlockStoreImpl implements BlockStore {
 
     public Block getBlockByHash(Bytes32 hashlow, boolean isRaw) {
         if (isRaw) {
-            log.debug("Raw Block By Hash: {}", getRawBlockByHash(hashlow));
             return getRawBlockByHash(hashlow);
         }
-        log.debug("Block Info By Hash: {}", getBlockInfoByHash(hashlow));
         return getBlockInfoByHash(hashlow);
     }
 
@@ -542,12 +540,13 @@ public class BlockStoreImpl implements BlockStore {
 
     public Block getBlockInfoByHash(Bytes32 hashlow) {
         if (!hasBlockInfo(hashlow)) {
-            log.debug("!hasBlockInfo");
+            log.debug("!hasBlockInfo, hashlow: {}", hashlow);
             return null;
         }
         BlockInfo blockInfo = null;
         byte[] value = indexSource.get(BytesUtils.merge(HASH_BLOCK_INFO, hashlow.toArray()));
         if (value == null) {
+            log.debug("value == null");
             return null;
         } else {
             try {
