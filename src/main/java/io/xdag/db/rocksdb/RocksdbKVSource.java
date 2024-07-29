@@ -240,6 +240,7 @@ public class RocksdbKVSource implements KVSource<byte[], byte[]> {
                 log.trace("~> RocksdbKVSource.get(): {}, key: {}", name, Hex.encodeHexString(key));
             }
             byte[] ret = db.get(readOpts, key);
+            log.debug("ret: {}", ret);
             if (log.isTraceEnabled()) {
                 log.trace("<~ RocksdbKVSource.get(): {}, key: {}, {}", name, Hex.encodeHexString(key),
                         ret == null ? "null" : ret.length);
