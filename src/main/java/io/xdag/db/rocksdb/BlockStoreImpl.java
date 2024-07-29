@@ -552,7 +552,6 @@ public class BlockStoreImpl implements BlockStore {
         } else {
             try {
                 blockInfo = (BlockInfo) deserialize(value, BlockInfo.class);
-                log.debug("blockInfo: {}", blockInfo);
             } catch (DeserializationException e) {
                 log.error("hash low:{}", hashlow.toHexString());
                 log.error("can't deserialize data:{}", Hex.toHexString(value));
