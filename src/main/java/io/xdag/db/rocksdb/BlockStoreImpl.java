@@ -458,6 +458,9 @@ public class BlockStoreImpl implements BlockStore {
         } catch (SerializationException e) {
             log.error(e.getMessage(), e);
         }
+        log.debug("BlockInfo Hashlow: {}", blockInfo.getHashlow());
+        log.debug("value: {}", value);
+        log.debug("BytesUtils.merge: {}", BytesUtils.merge(HASH_BLOCK_INFO, blockInfo.getHashlow()));
         indexSource.put(BytesUtils.merge(HASH_BLOCK_INFO, blockInfo.getHashlow()), value);
         // 如果区块是主块的话顺便保存对应的高度信息
         // TODO: paulochen 如果回滚了，对应高度的键值对该怎么更新(直接让其height=0的区块覆盖)
