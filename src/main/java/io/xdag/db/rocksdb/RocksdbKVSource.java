@@ -210,7 +210,7 @@ public class RocksdbKVSource implements KVSource<byte[], byte[]> {
                 log.trace("~> RocksdbKVSource.put(): {}, key: {}, {}", name, Hex.encodeHexString(key),
                         val == null ? "null" : val.length);
             }
-            log.debug("val: {}", val);
+//            log.debug("val: {}", val);
             if (val != null) {
                 if (db == null) {
                     log.error("db is null");

@@ -1009,17 +1009,19 @@ public class BlockchainImpl implements Blockchain {
                 FieldType.XDAG_FIELD_COINBASE,
                 true);
         List<Address> refs = Lists.newArrayList();
-        Address preTopNew = new Address(Bytes32.wrap(pretopHashLow), XDAG_FIELD_OUT, false);
+//        Address preTopNew = new Address(Bytes32.wrap(pretopHashLow), XDAG_FIELD_OUT, false);
         if (preTop != null) {
             refs.add(preTop);
             log.debug("Current epoch is: {}, update pretop: {}", XdagTime.getEpoch(sendTime[0]), preTop);
-        } else {
-//            Address preTopNew = new Address(Bytes32.wrap(pretopHashLow), XDAG_FIELD_OUT, false);
+        }
+        else {
+            Address preTopNew = new Address(Bytes32.wrap(pretopHashLow), XDAG_FIELD_OUT, false);
             refs.add(preTopNew);
             log.debug("Pretop not update in epoch: {}, update pretop: {}", XdagTime.getEpoch(sendTime[0]), preTopNew);
+//            log.debug("Pretop not update in epoch: {}", XdagTime.getEpoch(sendTime[0]));
         }
 
-        log.debug("Pretop new: {}", preTopNew);
+//        log.debug("Pretop new: {}", preTopNew);
 
         if (coinbase == null) {
             throw new ArithmeticException("Invalidate main block!");
