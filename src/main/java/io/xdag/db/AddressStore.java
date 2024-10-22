@@ -32,6 +32,7 @@ public interface AddressStore {
     byte ADDRESS_SIZE = (byte) 0x10;
     byte AMOUNT_SUM = (byte) 0x20;
     byte ADDRESS = (byte) 0x30;
+    byte TRANSACTION_NONCE = 0x40;
 
     void init();
 
@@ -57,4 +58,7 @@ public interface AddressStore {
 
     void snapshotAddress(byte[] address, XAmount balance);
 
+    UInt64 getTransactionNonce(byte[] address);
+
+    void saveTransactionNonce(byte[] address, UInt64 transactionNonce);
 }

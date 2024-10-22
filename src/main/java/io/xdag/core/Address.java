@@ -24,15 +24,19 @@
 
 package io.xdag.core;
 
+import io.xdag.Kernel;
+import io.xdag.db.AddressStore;
 import io.xdag.utils.BytesUtils;
 import io.xdag.utils.WalletUtils;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes32;
 import org.apache.tuweni.units.bigints.UInt64;
 
+@Slf4j
 public class Address {
 
     /**
@@ -57,6 +61,25 @@ public class Address {
     protected boolean isAddress;
 
     protected boolean parsed = false;
+
+    @Getter
+    @Setter
+    protected UInt64 transactionNonce;
+
+    protected MutableBytes32 transactionNonceData;
+
+    protected static Kernel kernel;
+
+    protected static AddressStore addressStore;
+
+    public Address(Kernel kernel) {
+        Address.kernel = kernel;
+        addressStore = kernel.getAddressStore();
+    }
+
+    public Address(UInt64 transactionNonce) {
+        this.transactionNonce = transactionNonce;
+    }
 
     public Address(XdagField field, Boolean isAddress) {
         this.isAddress = isAddress;
@@ -111,8 +134,22 @@ public class Address {
             this.addressHash = hash.mutableCopy();
         }else {
             this.addressHash = MutableBytes32.create();
-            this.addressHash.set(8,hash.mutableCopy().slice(8,20));
+            this.addressHash.set(8, hash.mutableCopy().slice(8,20));
         }
+        this.amount = amount;
+        parsed = true;
+    }
+
+    public Address(Bytes32 hash, XdagField.FieldType type, XAmount amount, Boolean isAddress, UInt64 transactionNonce) {
+        this.isAddress = isAddress;
+        this.type = type;
+        if(!isAddress){
+            this.addressHash = hash.mutableCopy();
+        }else {
+            this.addressHash = MutableBytes32.create();
+            this.addressHash.set(8, hash.mutableCopy().slice(8,20));
+        }
+        this.transactionNonce = transactionNonce;
         this.amount = amount;
         parsed = true;
     }
@@ -139,6 +176,15 @@ public class Address {
             }else {
                 this.addressHash = MutableBytes32.create();
                 this.addressHash.set(8,this.data.slice(8,20));
+
+                if (this.type == XdagField.FieldType.XDAG_FIELD_INPUT) {
+                    try {
+                        this.transactionNonce = getTxNonce();
+                    } catch (Exception error) {
+                        log.error(error.getMessage());
+                        throw new RuntimeException(error);
+                    }
+                }
             }
             UInt64 u64v = UInt64.fromBytes(this.data.slice(0, 8));
             this.amount = XAmount.ofXAmount(u64v.toLong());
@@ -159,6 +205,23 @@ public class Address {
     public boolean getIsAddress() {
         parse();
         return this.isAddress;
+    }
+
+    public UInt64 getTxNonce() {
+        byte[] byteAddress = this.addressHash.slice(8, 20).toArray();
+        return addressStore.getTransactionNonce(byteAddress); // output: 3
+    }
+
+    public Bytes getTxNonceData() {
+        this.transactionNonceData = MutableBytes32.create();
+        this.transactionNonceData.set(0, Bytes.wrap(BytesUtils.bigIntegerToBytes(getTxNonce(), 8)));
+        return this.transactionNonceData; // output: 0x0000000000000003000000000000000000000000000000000000000000000000
+    }
+
+    public void updateTxNonce(byte[] address) {
+        UInt64 currentNonce = addressStore.getTransactionNonce(address);
+        UInt64 nextNonce = currentNonce.add(UInt64.ONE);
+        addressStore.saveTransactionNonce(address, nextNonce);
     }
 
     @Override

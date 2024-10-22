@@ -53,6 +53,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.bytes.MutableBytes32;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -333,6 +334,28 @@ public class BlockchainImpl implements Blockchain {
                         return result;
                     }
                 }
+
+                // Determine whether transaction nonce meets the requirements
+                if (ref != null && ref.getType() == XDAG_FIELD_INPUT) {
+                    byte[] address = BytesUtils.byte32ToArray(ref.getAddress());
+                    UInt64 transactionNonce = addressStore.getTransactionNonce(address);
+                    UInt64 refNonce = block.getAddress().getTransactionNonce();
+                    String account = toBase58(BytesUtils.byte32ToArray(ref.getAddress()));
+
+                    if (transactionNonce == null || refNonce == null || transactionNonce.compareTo(refNonce) != 0) {
+                        result = ImportResult.INVALID_BLOCK;
+                        result.setErrorInfo(String.format("Nonce is wrong, the correct nonce is:%s , your nonce " +
+                                "is:%s", transactionNonce, refNonce));
+                        log.error("INVALID BLOCK. Nonce is wrong!!! Account address: {}, " +
+                                "current nonce is: {}, your nonce is: {}", account, transactionNonce, refNonce);
+                        return result;
+                    } else {
+                        ref.updateTxNonce(address);
+                        log.debug("Transfer from: {}, Current nonce: {}, Next nonce: {}",
+                                account, transactionNonce, addressStore.getTransactionNonce(address));
+                    }
+                }
+
                 /*
                  Determine if ref is a block
                  */
@@ -971,7 +994,8 @@ public class BlockchainImpl implements Blockchain {
         all.addAll(to);
 
         // TODO: 判断pair是否有重复
-        int res = 1 + pairs.size() + to.size() + 3 * keys.size() + (defKeyIndex == -1 ? 2 : 0) + hasRemark;
+        // int res = 1 + pairs.size() + to.size() + 3 * keys.size() + (defKeyIndex == -1 ? 2 : 0) + hasRemark;
+        int res = 1 + 1 + pairs.size() + to.size() + 3 * keys.size() + (defKeyIndex == -1 ? 2 : 0) + hasRemark;
 
         // TODO : 如果区块字段不足
         if (res > 16) {

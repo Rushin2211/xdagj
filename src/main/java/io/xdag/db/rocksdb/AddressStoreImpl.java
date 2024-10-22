@@ -124,4 +124,26 @@ public class AddressStoreImpl implements AddressStore {
         AddressSource.put(address, u64V.toBytes().toArray());
     }
 
+    @Override
+    public UInt64 getTransactionNonce(byte[] address) {
+//        log.debug("address: {}", address);
+        byte[] key = BytesUtils.merge(TRANSACTION_NONCE, address);
+        byte[] transactionNonce = AddressSource.get(key);
+
+        if (transactionNonce == null) {
+            return UInt64.ZERO;
+        } else {
+            return UInt64.fromBytes(Bytes.wrap(transactionNonce));
+        }
+    }
+
+    @Override
+    public void saveTransactionNonce(byte[] address, UInt64 transactionNonce) {
+//        log.debug("address: {}", address);
+        byte[] key = BytesUtils.merge(TRANSACTION_NONCE, address);
+
+        synchronized (this) {
+            AddressSource.put(key, transactionNonce.toBytes().toArray());
+        }
+    }
 }

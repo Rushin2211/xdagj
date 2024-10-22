@@ -39,6 +39,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
 import org.apache.tuweni.bytes.MutableBytes32;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.bouncycastle.math.ec.ECPoint;
 import org.hyperledger.besu.crypto.KeyPair;
 import org.hyperledger.besu.crypto.SECPPublicKey;
@@ -99,6 +100,9 @@ public class Block implements Cloneable {
     @Setter
     private BigInteger pretopCandidateDiff;
 
+    @Getter
+    private Address address;
+
     public Block(
             Config config,
             long timestamp,
@@ -120,6 +124,11 @@ public class Block implements Cloneable {
         if (CollectionUtils.isNotEmpty(links)) {
             for (Address link : links) {
                 XdagField.FieldType type = link.getType();
+
+                if (type == XDAG_FIELD_INPUT) {
+                    setType(XDAG_FIELD_TRANSACTION_NONCE, lenghth++);
+                }
+
                 setType(type, lenghth++);
                 if (type == XDAG_FIELD_OUT || type == XDAG_FIELD_OUTPUT) {
                     outputs.add(link);
@@ -250,6 +259,10 @@ public class Block implements Cloneable {
                 throw new IllegalArgumentException("xdagBlock field:" + i + " is null");
             }
             switch (field.getType()) {
+            case XDAG_FIELD_TRANSACTION_NONCE -> {
+                this.address = new Address(UInt64.fromBytes(field.getData().slice(24, 8).reverse()).toUInt64());
+                // log.debug("Transaction Nonce: {}", this.address.getTransactionNonce());
+            }
             case XDAG_FIELD_IN -> inputs.add(new Address(field,false));
             case XDAG_FIELD_INPUT -> inputs.add(new Address(field,true));
             case XDAG_FIELD_OUT -> outputs.add(new Address(field,false));
@@ -333,6 +346,7 @@ public class Block implements Cloneable {
         }
         Bytes32 nonceNotNull = Objects.requireNonNullElse(nonce, Bytes32.ZERO);
         encoder.writeField(nonceNotNull.toArray());
+        // log.debug("sign msg:{}", Hex.toHexString(encoder.toBytes()));
         return encoder.toBytes();
     }
 
@@ -346,6 +360,12 @@ public class Block implements Cloneable {
         all.addAll(inputs);
         all.addAll(outputs);
         for (Address link : all) {
+
+            if (link.getType() == XDAG_FIELD_INPUT) {
+                // log.debug("Nonce: {}", link.getTransactionNonceData());
+                encoder.writeField(link.getTxNonceData().reverse().toArray());
+            }
+
             encoder.writeField(link.getData().reverse().toArray());
         }
         if (info.getRemark() != null) {
@@ -387,12 +407,10 @@ public class Block implements Cloneable {
 
     private void sign(KeyPair ecKey, XdagField.FieldType type) {
         byte[] encoded = toBytes();
-        // log.debug("sign encoded:{}", Hex.toHexString(encoded));
+        // log.debug("sign msg:{}", Hex.toHexString(encoded));
         byte[] pubkeyBytes = ecKey.getPublicKey().asEcPoint(Sign.CURVE).getEncoded(true);
         byte[] digest = BytesUtils.merge(encoded, pubkeyBytes);
-        //log.debug("sign digest:{}", Hex.toHexString(digest));
         Bytes32 hash = Hash.hashTwice(Bytes.wrap(digest));
-        //log.debug("sign hash:{}", Hex.toHexString(hash.toArray()));
         SECPSignature signature = Sign.SECP256K1.sign(hash, ecKey);
         if (type == XDAG_FIELD_SIGN_OUT) {
             outsig = signature;

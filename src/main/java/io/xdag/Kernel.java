@@ -283,6 +283,10 @@ public class Kernel {
         log.info("Node to pool websocket start...");
         // register pow
         blockchain.registerListener(pow);
+
+        // Initialize the kernel in address to get nonce
+        new Address(this);
+
         if (config instanceof MainnetConfig) {
             xdagState = XdagState.WAIT;
         } else if (config instanceof TestnetConfig) {

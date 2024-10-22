@@ -41,6 +41,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes32;
+import org.apache.tuweni.units.bigints.UInt64;
 import org.bouncycastle.util.encoders.Hex;
 import org.hyperledger.besu.crypto.KeyPair;
 
@@ -66,6 +67,8 @@ import static io.xdag.utils.WalletUtils.*;
 public class Commands {
 
     private final Kernel kernel;
+
+    private UInt64 transactionNonce;
 
     public Commands(Kernel kernel) {
         this.kernel = kernel;
@@ -218,15 +221,16 @@ public class Commands {
         for (KeyPair account : accounts) {
             byte[] addr = toBytesAddress(account);
             XAmount addrBalance = kernel.getAddressStore().getBalanceByAddress(addr);
+            this.transactionNonce = kernel.getAddressStore().getTransactionNonce(addr);
 
             if (compareAmountTo(remain.get(), addrBalance) <= 0) {
-                ourAccounts.put(new Address(keyPair2Hash(account), XDAG_FIELD_INPUT, remain.get(), true), account);
+                ourAccounts.put(new Address(keyPair2Hash(account), XDAG_FIELD_INPUT, remain.get(), true, this.transactionNonce), account);
                 remain.set(XAmount.ZERO);
                 break;
             } else {
                 if (compareAmountTo(addrBalance, XAmount.ZERO) > 0) {
                     remain.set(remain.get().subtract(addrBalance));
-                    ourAccounts.put(new Address(keyPair2Hash(account), XDAG_FIELD_INPUT, addrBalance, true), account);
+                    ourAccounts.put(new Address(keyPair2Hash(account), XDAG_FIELD_INPUT, addrBalance, true, this.transactionNonce), account);
                 }
             }
         }
@@ -270,7 +274,9 @@ public class Commands {
         keysPerBlock.add(kernel.getWallet().getDefKey());
 
         // base count a block <header + send address + defKey signature>
-        int base = 1 + 1 + 2 + hasRemark;
+        // int base = 1 + 1 + 2 + hasRemark;
+        // base count a block <header + transaction nonce + send address + defKey signature>
+        int base = 1 + 1 + 1 + 2 + hasRemark;
         XAmount amount = XAmount.ZERO;
 
         while (!stack.isEmpty()) {
@@ -294,7 +300,8 @@ public class Commands {
                 keys = new HashMap<>();
                 keysPerBlock = new HashSet<>();
                 keysPerBlock.add(kernel.getWallet().getDefKey());
-                base = 1 + 1 + 2 + hasRemark;
+//                base = 1 + 1 + 2 + hasRemark;
+                base = 1 + 1 + 1 + 2 + hasRemark;
                 amount = XAmount.ZERO;
             }
         }
