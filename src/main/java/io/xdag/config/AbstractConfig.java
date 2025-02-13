@@ -260,7 +260,7 @@ public class AbstractConfig implements Config, AdminSpec, NodeSpec, WalletSpec, 
             whiteIPList.add(new InetSocketAddress(ip, port));
         }
         // RPC configuration
-        rpcHttpEnabled = config.hasPath("rpc.http.enabled") && config.getBoolean("rpc.http.enabled");
+        rpcHttpEnabled = config.hasPath("rpc.enabled") && config.getBoolean("rpc.enabled");
         if (rpcHttpEnabled) {
             rpcHttpHost = config.hasPath("rpc.http.host") ? config.getString("rpc.http.host") : "127.0.0.1";
             rpcHttpPort = config.hasPath("rpc.http.port") ? config.getInt("rpc.http.port") : 10001;

@@ -54,7 +54,15 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
             "xdag_getRewardByNumber",
             "xdag_syncing",
             "xdag_protocolVersion",
-            "xdag_getBlocksByNumber"
+            "xdag_getBlocksByNumber",
+            "xdag_accounts",
+            "xdag_sign",
+            "xdag_chainId",
+            "xdag_getTransactionByHash",
+            "xdag_getBalanceByNumber",
+            "xdag_sendTransaction",
+            "xdag_poolConfig",
+            "xdag_getMaxXferBalance"
     );
 
     private final XdagApi xdagApi;
@@ -153,6 +161,34 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                     validateParams(params, "Missing block number parameter");
                     yield xdagApi.xdag_getBlocksByNumber(params[0].toString());
                 }
+                case "xdag_accounts" -> xdagApi.xdag_accounts();
+                case "xdag_sign" -> {
+                    validateParams(params, "Missing transaction arguments or passphrase");
+                    if (params.length < 2) {
+                        throw JsonRpcException.invalidParams("Missing transaction arguments or passphrase");
+                    }
+                    yield xdagApi.xdag_sign(params[0].toString(), params[1].toString());
+                }
+                case "xdag_chainId" -> xdagApi.xdag_chainId();
+                case "xdag_getTransactionByHash" -> {
+                    validateParams(params, "Missing transaction arguments or passphrase");
+                    if (params.length < 2) {
+                        throw JsonRpcException.invalidParams("Missing transaction arguments or passphrase");
+                    }
+                    yield xdagApi.xdag_getTransactionByHash(params[0].toString(), Integer.parseInt(params[1].toString()));
+                }
+                case "xdag_getBalanceByNumber" -> {
+                    validateParams(params, "Missing transaction arguments or passphrase");
+                    yield xdagApi.xdag_getBalanceByNumber(params[0].toString());
+                }
+                case "xdag_sendTransaction" -> {
+                    validateParams(params, "Missing transaction arguments or passphrase");
+                    TransactionRequest txRequest = MAPPER.convertValue(params[0], TransactionRequest.class);
+                    validateTransactionRequest(txRequest, false);
+                    yield xdagApi.xdag_sendTransaction(txRequest);
+                }
+                case "xdag_poolConfig" -> xdagApi.xdag_poolConfig();
+                case "xdag_getMaxXferBalance" -> xdagApi.xdag_getMaxXferBalance();
                 default -> throw JsonRpcException.methodNotFound(method);
             };
         } catch (JsonRpcException e) {

@@ -28,20 +28,21 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.xdag.Kernel;
 import io.xdag.Wallet;
+import io.xdag.cli.Commands;
 import io.xdag.config.Config;
 import io.xdag.config.DevnetConfig;
 import io.xdag.config.MainnetConfig;
 import io.xdag.config.TestnetConfig;
+import io.xdag.config.spec.NodeSpec;
 import io.xdag.config.spec.RPCSpec;
 import io.xdag.core.*;
 import io.xdag.net.Channel;
 import io.xdag.rpc.model.request.TransactionRequest;
-import io.xdag.rpc.model.response.BlockResponse;
-import io.xdag.rpc.model.response.NetConnResponse;
-import io.xdag.rpc.model.response.ProcessResponse;
-import io.xdag.rpc.model.response.XdagStatusResponse;
+import io.xdag.rpc.model.response.*;
+import io.xdag.rpc.model.response.ConfigResponse;
 import io.xdag.rpc.server.core.JsonRpcServer;
 import io.xdag.rpc.api.XdagApi;
+import io.xdag.rpc.util.TypeConverter;
 import io.xdag.utils.BasicUtils;
 import io.xdag.utils.BytesUtils;
 import io.xdag.utils.WalletUtils;
@@ -128,6 +129,55 @@ public class XdagApiImpl extends AbstractXdagLifecycle implements XdagApi {
         } finally {
             log.info("JSON-RPC server stopped");
         }
+    }
+
+    @Override
+    public String[] xdag_accounts() {
+        String[] accounts = {};
+        return accounts;
+    }
+
+    @Override
+    public String xdag_sign(String addr, String data) {
+        return "a";
+    }
+
+    @Override
+    public String xdag_chainId() {
+        return TypeConverter.toJsonHex(new byte[]{(byte) 0x1});
+    }
+
+    @Override
+    public BlockResponse xdag_getTransactionByHash(String hash, int page) {
+        return getBlockDTOByHash(hash, page);
+    }
+
+    @Override
+    public String xdag_getBalanceByNumber(String bnOrId) {
+        Block block = blockchain.getBlockByHeight(Long.parseLong(bnOrId));
+        if (null == block) {
+            return null;
+        }
+        return String.format("%s", block.getInfo().getAmount().toDecimal(9, XUnit.XDAG).toPlainString());
+    }
+
+    @Override
+    public String xdag_sendTransaction(TransactionRequest request) {
+        return null;
+    }
+
+    @Override
+    public ConfigResponse xdag_poolConfig() {
+        NodeSpec nodeSpec = kernel.getConfig().getNodeSpec();
+        ConfigResponse.ConfigResponseBuilder configResponseBuilder = ConfigResponse.builder();
+        configResponseBuilder.nodeIp(nodeSpec.getNodeIp());
+        configResponseBuilder.nodePort(nodeSpec.getNodePort());
+        return configResponseBuilder.build();
+    }
+
+    @Override
+    public String xdag_getMaxXferBalance() {
+        return Commands.getBalanceMaxXfer(kernel);
     }
 
     @Override

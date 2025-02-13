@@ -25,11 +25,8 @@
 package io.xdag.rpc.api;
 
 import io.xdag.core.XdagLifecycle;
-import io.xdag.rpc.model.response.BlockResponse;
+import io.xdag.rpc.model.response.*;
 import io.xdag.rpc.model.request.TransactionRequest;
-import io.xdag.rpc.model.response.NetConnResponse;
-import io.xdag.rpc.model.response.ProcessResponse;
-import io.xdag.rpc.model.response.XdagStatusResponse;
 
 import java.util.List;
 
@@ -38,6 +35,21 @@ import java.util.List;
  * It extends XdagLifecycle to manage the lifecycle of the API service.
  */
 public interface XdagApi extends XdagLifecycle {
+    String[] xdag_accounts();
+
+    String xdag_sign(String addr, String data);
+
+    String xdag_chainId();
+
+    BlockResponse xdag_getTransactionByHash(String hash, int page);
+
+    String xdag_getBalanceByNumber(String bnOrId);
+
+    String xdag_sendTransaction(TransactionRequest request);
+
+    ConfigResponse xdag_poolConfig();
+
+    String xdag_getMaxXferBalance();
 
     String xdag_protocolVersion();
 
