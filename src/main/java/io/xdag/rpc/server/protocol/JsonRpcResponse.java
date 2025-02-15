@@ -36,7 +36,7 @@ public class JsonRpcResponse {
     private String jsonrpc = "2.0";
 
     @JsonProperty("id")
-    private String id;
+    private int id;
     
     @JsonProperty("result")
     private Object result;
@@ -45,11 +45,11 @@ public class JsonRpcResponse {
     private JsonRpcError error;
 
 
-    public JsonRpcResponse(String id, Object result) {
+    public JsonRpcResponse(int id, Object result) {
         this(id, result, null);
     }
 
-    public JsonRpcResponse(String id, Object result, JsonRpcError error) {
+    public JsonRpcResponse(int id, Object result, JsonRpcError error) {
         this.id = id;
         this.result = error == null ? result : null;
         this.error = error;
@@ -62,7 +62,7 @@ public class JsonRpcResponse {
      * @return a new JsonRpcResponse with the error
      * @throws IllegalArgumentException if error is null
      */
-    public static JsonRpcResponse error(String id, JsonRpcError error) {
+    public static JsonRpcResponse error(int id, JsonRpcError error) {
         if (error == null) {
             throw new IllegalArgumentException("Error cannot be null");
         }
@@ -75,7 +75,7 @@ public class JsonRpcResponse {
      * @param result the result object
      * @return a new JsonRpcResponse with the result
      */
-    public static JsonRpcResponse success(String id, Object result) {
+    public static JsonRpcResponse success(int id, Object result) {
         return new JsonRpcResponse(id, result, null);
     }
 
@@ -85,7 +85,7 @@ public class JsonRpcResponse {
      * @return a new JsonRpcResponse without id
      */
     public static JsonRpcResponse notification(Object result) {
-        return new JsonRpcResponse(null, result, null);
+        return new JsonRpcResponse(1, result, null);
     }
 
 }

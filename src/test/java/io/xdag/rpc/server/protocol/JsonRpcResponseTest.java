@@ -31,7 +31,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testSuccessResponse() {
-        String id = "1";
+        int id = 1;
         String result = "success";
         JsonRpcResponse response = JsonRpcResponse.success(id, result);
 
@@ -43,7 +43,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testErrorResponse() {
-        String id = "1";
+        int id = 1;
         JsonRpcError error = new JsonRpcError(JsonRpcError.ERR_INVALID_REQUEST, "Invalid request");
         JsonRpcResponse response = JsonRpcResponse.error(id, error);
 
@@ -58,7 +58,7 @@ public class JsonRpcResponseTest {
     @Test
     public void testNullId() {
         String result = "success";
-        JsonRpcResponse response = JsonRpcResponse.success(null, result);
+        JsonRpcResponse response = JsonRpcResponse.success(1, result);
 
         assertEquals("2.0", response.getJsonrpc());
         assertNull(response.getId());
@@ -68,7 +68,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testNullResult() {
-        String id = "1";
+        int id = 1;
         JsonRpcResponse response = JsonRpcResponse.success(id, null);
 
         assertEquals("2.0", response.getJsonrpc());
@@ -79,7 +79,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testComplexResult() {
-        String id = "1";
+        int id = 1;
         Object[] result = new Object[]{"value1", 123, true};
         JsonRpcResponse response = JsonRpcResponse.success(id, result);
 
@@ -91,7 +91,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testErrorResponseWithData() {
-        String id = "1";
+        int id = 1;
         Object data = "Additional error data";
         JsonRpcError error = new JsonRpcError(JsonRpcError.ERR_INTERNAL, "Internal error", data);
         JsonRpcResponse response = JsonRpcResponse.error(id, error);
@@ -107,7 +107,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testErrorResponseEnsuresNullResult() {
-        String id = "1";
+        int id = 1;
         Object result = "This should be null";
         JsonRpcError error = new JsonRpcError(JsonRpcError.ERR_INTERNAL, "Internal error");
         JsonRpcResponse response = new JsonRpcResponse(id, result, error);
@@ -120,7 +120,7 @@ public class JsonRpcResponseTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testErrorResponseWithNullError() {
-        JsonRpcResponse.error("1", null);
+        JsonRpcResponse.error(1, null);
     }
 
     @Test
@@ -146,7 +146,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testErrorResponseWithComplexData() {
-        String id = "1";
+        int id = 1;
         Object data = new Object[]{
             "error details",
             123,
@@ -165,7 +165,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testSuccessResponseWithEmptyArray() {
-        String id = "1";
+        int id = 1;
         Object[] result = new Object[]{};
         JsonRpcResponse response = JsonRpcResponse.success(id, result);
 
@@ -177,7 +177,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testSuccessResponseWithNestedObjects() {
-        String id = "1";
+        int id = 1;
         Object[] nested = new Object[]{"nested", 456};
         Object[] result = new Object[]{"value1", 123, nested};
         JsonRpcResponse response = JsonRpcResponse.success(id, result);
@@ -193,7 +193,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testErrorResponseWithMaxIntegerCode() {
-        String id = "1";
+        int id = 1;
         JsonRpcError error = new JsonRpcError(Integer.MAX_VALUE, "Max error code");
         JsonRpcResponse response = JsonRpcResponse.error(id, error);
 
@@ -205,7 +205,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testErrorResponseWithMinIntegerCode() {
-        String id = "1";
+        int id = 1;
         JsonRpcError error = new JsonRpcError(Integer.MIN_VALUE, "Min error code");
         JsonRpcResponse response = JsonRpcResponse.error(id, error);
 
@@ -217,7 +217,7 @@ public class JsonRpcResponseTest {
 
     @Test
     public void testErrorResponseWithEmptyMessage() {
-        String id = "1";
+        int id = 1;
         JsonRpcError error = new JsonRpcError(JsonRpcError.ERR_INTERNAL, "");
         JsonRpcResponse response = JsonRpcResponse.error(id, error);
 
