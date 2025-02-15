@@ -34,15 +34,16 @@ public class JsonRpcResponse {
     // Getters and Setters
     @JsonProperty("jsonrpc")
     private String jsonrpc = "2.0";
+
+    @JsonProperty("id")
+    private String id;
     
     @JsonProperty("result")
     private Object result;
     
     @JsonProperty("error")
     private JsonRpcError error;
-    
-    @JsonProperty("id")
-    private String id;
+
 
     public JsonRpcResponse(String id, Object result) {
         this(id, result, null);
