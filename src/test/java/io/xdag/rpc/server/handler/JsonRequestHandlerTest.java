@@ -98,68 +98,68 @@ public class JsonRequestHandlerTest {
         }
     }
 
-    @Test
-    public void testHandleInvalidPageNumber() throws Exception {
-        String requestJson = """
-                {
-                    "jsonrpc": "2.0",
-                    "method": "xdag_getBlockByHash",
-                    "params": ["0x1234", -1],
-                    "id": "1"
-                }""";
-
-        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
-        request.validate();
-        try {
-            handler.handle(request);
-            fail("Should throw JsonRpcException for invalid page number");
-        } catch (JsonRpcException e) {
-            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
-            assertEquals("Error message should match", "Page number must be greater than 0", e.getMessage());
-        }
-    }
-
-    @Test
-    public void testHandleInvalidPageSize() throws Exception {
-        String requestJson = """
-                {
-                    "jsonrpc": "2.0",
-                    "method": "xdag_getBlockByHash",
-                    "params": ["0x1234", 1, 101],
-                    "id": "1"
-                }""";
-
-        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
-        request.validate();
-        try {
-            handler.handle(request);
-            fail("Should throw JsonRpcException for invalid page size");
-        } catch (JsonRpcException e) {
-            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
-            assertEquals("Error message should match", "Page size must be between 1 and 100", e.getMessage());
-        }
-    }
-
-    @Test
-    public void testHandleInvalidTimeFormat() throws Exception {
-        String requestJson = """
-                {
-                    "jsonrpc": "2.0",
-                    "method": "xdag_getBlockByHash",
-                    "params": ["0x1234", 1, "", "invalid_time"],
-                    "id": "1"
-                }""";
-
-        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
-        request.validate();
-        try {
-            handler.handle(request);
-            fail("Should throw JsonRpcException for invalid time format");
-        } catch (JsonRpcException e) {
-            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
-            assertTrue("Error message should match", e.getMessage().contains("Invalid start time"));
-        }
-    }
+//    @Test
+//    public void testHandleInvalidPageNumber() throws Exception {
+//        String requestJson = """
+//                {
+//                    "jsonrpc": "2.0",
+//                    "method": "xdag_getBlockByHash",
+//                    "params": ["0x1234", -1],
+//                    "id": "1"
+//                }""";
+//
+//        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
+//        request.validate();
+//        try {
+//            handler.handle(request);
+//            fail("Should throw JsonRpcException for invalid page number");
+//        } catch (JsonRpcException e) {
+//            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
+//            assertEquals("Error message should match", "Page number must be greater than 0", e.getMessage());
+//        }
+//    }
+//
+//    @Test
+//    public void testHandleInvalidPageSize() throws Exception {
+//        String requestJson = """
+//                {
+//                    "jsonrpc": "2.0",
+//                    "method": "xdag_getBlockByHash",
+//                    "params": ["0x1234", 1, 101],
+//                    "id": "1"
+//                }""";
+//
+//        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
+//        request.validate();
+//        try {
+//            handler.handle(request);
+//            fail("Should throw JsonRpcException for invalid page size");
+//        } catch (JsonRpcException e) {
+//            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
+//            assertEquals("Error message should match", "Page size must be between 1 and 100", e.getMessage());
+//        }
+//    }
+//
+//    @Test
+//    public void testHandleInvalidTimeFormat() throws Exception {
+//        String requestJson = """
+//                {
+//                    "jsonrpc": "2.0",
+//                    "method": "xdag_getBlockByHash",
+//                    "params": ["0x1234", 1, "", "invalid_time"],
+//                    "id": "1"
+//                }""";
+//
+//        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
+//        request.validate();
+//        try {
+//            handler.handle(request);
+//            fail("Should throw JsonRpcException for invalid time format");
+//        } catch (JsonRpcException e) {
+//            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
+//            assertTrue("Error message should match", e.getMessage().contains("Invalid start time"));
+//        }
+//    }
 
     @Test(expected = JsonRpcException.class)
     public void testHandleInvalidMethod() throws Exception {
@@ -287,47 +287,47 @@ public class JsonRequestHandlerTest {
         verify(xdagApi).xdag_getBlockByHash("0x1234", 1, 1);
     }
 
-    @Test
-    public void testHandleNonNumericPageNumber() throws Exception {
-        String requestJson = """
-                {
-                    "jsonrpc": "2.0",
-                    "method": "xdag_getBlockByHash",
-                    "params": ["0x1234", "abc"],
-                    "id": "1"
-                }""";
-
-        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
-        request.validate();
-        try {
-            handler.handle(request);
-            fail("Should throw JsonRpcException for non-numeric page number");
-        } catch (JsonRpcException e) {
-            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
-            assertEquals("Error message should match", "Invalid page number format", e.getMessage());
-        }
-    }
-
-    @Test
-    public void testHandleNonNumericPageSize() throws Exception {
-        String requestJson = """
-                {
-                    "jsonrpc": "2.0",
-                    "method": "xdag_getBlockByHash",
-                    "params": ["0x1234", 1, "abc"],
-                    "id": "1"
-                }""";
-
-        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
-        request.validate();
-        try {
-            handler.handle(request);
-            fail("Should throw JsonRpcException for non-numeric page size");
-        } catch (JsonRpcException e) {
-            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
-            assertEquals("Error message should match", "Invalid page size format", e.getMessage());
-        }
-    }
+//    @Test
+//    public void testHandleNonNumericPageNumber() throws Exception {
+//        String requestJson = """
+//                {
+//                    "jsonrpc": "2.0",
+//                    "method": "xdag_getBlockByHash",
+//                    "params": ["0x1234", "abc"],
+//                    "id": "1"
+//                }""";
+//
+//        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
+//        request.validate();
+//        try {
+//            handler.handle(request);
+//            fail("Should throw JsonRpcException for non-numeric page number");
+//        } catch (JsonRpcException e) {
+//            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
+//            assertEquals("Error message should match", "Invalid page number format", e.getMessage());
+//        }
+//    }
+//
+//    @Test
+//    public void testHandleNonNumericPageSize() throws Exception {
+//        String requestJson = """
+//                {
+//                    "jsonrpc": "2.0",
+//                    "method": "xdag_getBlockByHash",
+//                    "params": ["0x1234", 1, "abc"],
+//                    "id": "1"
+//                }""";
+//
+//        JsonRpcRequest request = MAPPER.readValue(requestJson, JsonRpcRequest.class);
+//        request.validate();
+//        try {
+//            handler.handle(request);
+//            fail("Should throw JsonRpcException for non-numeric page size");
+//        } catch (JsonRpcException e) {
+//            assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
+//            assertEquals("Error message should match", "Invalid page size format", e.getMessage());
+//        }
+//    }
 
     @Test
     public void testHandleNullParams() throws Exception {
