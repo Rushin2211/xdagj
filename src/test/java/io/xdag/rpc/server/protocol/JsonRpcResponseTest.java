@@ -93,7 +93,7 @@ public class JsonRpcResponseTest {
     public void testErrorResponseWithData() {
         int id = 1;
         Object data = "Additional error data";
-        JsonRpcError error = new JsonRpcError(JsonRpcError.ERR_INTERNAL, "Internal error", data);
+        JsonRpcError error = new JsonRpcError(JsonRpcError.ERR_INTERNAL, "Internal error");
         JsonRpcResponse response = JsonRpcResponse.error(id, error);
 
         assertEquals("2.0", response.getJsonrpc());
@@ -102,7 +102,6 @@ public class JsonRpcResponseTest {
         assertEquals(error, response.getError());
         assertEquals(JsonRpcError.ERR_INTERNAL, response.getError().getCode());
         assertEquals("Internal error", response.getError().getMessage());
-        assertEquals(data, response.getError().getData());
     }
 
     @Test
@@ -153,14 +152,13 @@ public class JsonRpcResponseTest {
             new Object[]{"nested", "array"},
             null
         };
-        JsonRpcError error = new JsonRpcError(JsonRpcError.ERR_INTERNAL, "Internal error", data);
+        JsonRpcError error = new JsonRpcError(JsonRpcError.ERR_INTERNAL, "Internal error");
         JsonRpcResponse response = JsonRpcResponse.error(id, error);
 
         assertEquals("2.0", response.getJsonrpc());
         assertEquals(id, response.getId());
         assertNull(response.getResult());
         assertEquals(error, response.getError());
-        assertArrayEquals((Object[]) data, (Object[]) response.getError().getData());
     }
 
     @Test

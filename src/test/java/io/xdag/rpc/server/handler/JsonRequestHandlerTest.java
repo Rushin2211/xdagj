@@ -74,7 +74,6 @@ public class JsonRequestHandlerTest {
         } catch (JsonRpcException e) {
             assertEquals("Error code should be invalid params", JsonRpcError.ERR_INVALID_PARAMS, e.getCode());
             assertEquals("Error message should match", "Request cannot be null", e.getMessage());
-            assertNull("Error data should be null", e.getData());
         }
     }
 

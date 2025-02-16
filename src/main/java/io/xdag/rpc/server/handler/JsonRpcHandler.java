@@ -89,7 +89,7 @@ public class JsonRpcHandler extends SimpleChannelInboundHandler<FullHttpRequest>
         try {
             rpcRequest = MAPPER.readValue(content, JsonRpcRequest.class);
         } catch (JsonRpcException e) {
-            sendError(ctx, new JsonRpcError(e.getCode(), e.getMessage(), e.getData()), null);
+            sendError(ctx, new JsonRpcError(e.getCode(), e.getMessage()), null);
             return;
         } catch (Exception e) {
             log.debug("Failed to parse JSON-RPC request", e);
@@ -102,7 +102,7 @@ public class JsonRpcHandler extends SimpleChannelInboundHandler<FullHttpRequest>
             sendResponse(ctx, new JsonRpcResponse(rpcRequest.getId(), result));
         } catch (JsonRpcException e) {
             log.debug("RPC error: {}", e.getMessage());
-            sendError(ctx, new JsonRpcError(e.getCode(), e.getMessage(), e.getData()), rpcRequest);
+            sendError(ctx, new JsonRpcError(e.getCode(), e.getMessage()), rpcRequest);
         } catch (Exception e) {
             log.error("Error processing request", e);
             sendError(ctx, new JsonRpcError(JsonRpcError.ERR_INTERNAL, "Internal error: " + e.getMessage()), rpcRequest);
