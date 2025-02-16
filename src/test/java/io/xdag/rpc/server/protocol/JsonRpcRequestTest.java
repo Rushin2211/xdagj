@@ -33,7 +33,7 @@ public class JsonRpcRequestTest {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId("1");
+        request.setId(1);
         request.setParams(new Object[]{"address"});
 
         // Should not throw any exception
@@ -41,11 +41,11 @@ public class JsonRpcRequestTest {
     }
 
     @Test
-    public void testValidRequestWithStringId() {
+    public void testValidRequestWithIntId() {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId("abc");  // String ID is valid
+        request.setId(1);  //
         request.setParams(new Object[]{"address"});
 
         // Should not throw any exception
@@ -57,7 +57,7 @@ public class JsonRpcRequestTest {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId("-1");  // Negative ID is valid
+        request.setId(-1);  // Negative ID is valid
         request.setParams(new Object[]{"address"});
 
         // Should not throw any exception
@@ -69,31 +69,20 @@ public class JsonRpcRequestTest {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId("0");  // Zero ID is valid
+        request.setId(0);  // Zero ID is valid
         request.setParams(new Object[]{"address"});
 
         // Should not throw any exception
         request.validate();
     }
 
-    @Test
-    public void testValidRequestWithDecimalId() {
-        JsonRpcRequest request = new JsonRpcRequest();
-        request.setJsonrpc("2.0");
-        request.setMethod("xdag_getBalance");
-        request.setId("1.5");  // Decimal ID is valid
-        request.setParams(new Object[]{"address"});
-
-        // Should not throw any exception
-        request.validate();
-    }
 
     @Test
     public void testValidRequestWithWhitespaceId() {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId(" 1 ");  // ID with whitespace is valid
+        request.setId(1);  // ID with whitespace is valid
         request.setParams(new Object[]{"address"});
 
         // Should not throw any exception
@@ -105,7 +94,7 @@ public class JsonRpcRequestTest {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId(null);  // Null ID is allowed
+        request.setId(0);  // Null ID is allowed
 
         // Should not throw any exception
         request.validate();
@@ -139,7 +128,7 @@ public class JsonRpcRequestTest {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId("1");
+        request.setId(1);
         request.setParams(new Object[]{});  // Empty params array
 
         // Should not throw any exception
@@ -151,7 +140,7 @@ public class JsonRpcRequestTest {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId("1");
+        request.setId(1);
         request.setParams(null);  // Null params
 
         // Should not throw any exception
@@ -183,47 +172,11 @@ public class JsonRpcRequestTest {
     }
 
     @Test
-    public void testValidRequestWithObjectId() {
-        JsonRpcRequest request = new JsonRpcRequest();
-        request.setJsonrpc("2.0");
-        request.setMethod("xdag_getBalance");
-        request.setId("{\"key\":\"value\"}");  // Object ID is valid according to JSON-RPC 2.0
-        request.setParams(new Object[]{"address"});
-
-        // Should not throw any exception
-        request.validate();
-    }
-
-    @Test
-    public void testValidRequestWithArrayId() {
-        JsonRpcRequest request = new JsonRpcRequest();
-        request.setJsonrpc("2.0");
-        request.setMethod("xdag_getBalance");
-        request.setId("[1,2,3]");  // Array ID is valid according to JSON-RPC 2.0
-        request.setParams(new Object[]{"address"});
-
-        // Should not throw any exception
-        request.validate();
-    }
-
-    @Test
-    public void testValidRequestWithBooleanId() {
-        JsonRpcRequest request = new JsonRpcRequest();
-        request.setJsonrpc("2.0");
-        request.setMethod("xdag_getBalance");
-        request.setId("true");  // Boolean ID is valid according to JSON-RPC 2.0
-        request.setParams(new Object[]{"address"});
-
-        // Should not throw any exception
-        request.validate();
-    }
-
-    @Test
     public void testValidRequestWithSpecialCharactersInMethod() {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance_v2.1");  // Method with special characters
-        request.setId("1");
+        request.setId(1);
         request.setParams(new Object[]{"address"});
 
         // Should not throw any exception
@@ -235,7 +188,7 @@ public class JsonRpcRequestTest {
         JsonRpcRequest request = new JsonRpcRequest();
         request.setJsonrpc("2.0");
         request.setMethod("xdag_getBalance");
-        request.setId("1");
+        request.setId(1);
         request.setParams(new Object[]{
             "address",
             123,
