@@ -84,12 +84,12 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                     validateParams(params, "Missing block hash parameter");
                     if (params.length == 2) {
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
-                            params[1] = "0";
+                            params[1] = "1";
                         }
                         yield xdagApi.xdag_getBlockByHash(params[0].toString(), Integer.parseInt(params[1].toString()));
                     } else if (params.length == 3) {
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
-                            params[1] = "0";
+                            params[1] = "1";
                         }
                         if (params[2] == null || params[2].toString().trim().isEmpty()) {
                             params[2] = "0";
@@ -97,12 +97,12 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                         yield xdagApi.xdag_getBlockByHash(params[0].toString(), Integer.parseInt(params[1].toString()), Integer.parseInt(params[2].toString()));
                     } else if (params.length == 4) {
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
-                            params[1] = "0";
+                            params[1] = "1";
                         }
                         yield xdagApi.xdag_getBlockByHash(params[0].toString(), Integer.parseInt(params[1].toString()), params[2].toString(), params[3].toString());
                     } else if (params.length == 5) {
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
-                            params[1] = "0";
+                            params[1] = "1";
                         }
                         if (params[4] == null || params[4].toString().trim().isEmpty()) {
                             params[4] = "0";
@@ -116,12 +116,12 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                     validateParams(params, "Missing block number parameter");
                     if (params.length == 2) {
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
-                            params[1] = "0";
+                            params[1] = "1";
                         }
                         yield xdagApi.xdag_getBlockByNumber(params[0].toString(), Integer.parseInt(params[1].toString()));
                     } else if (params.length == 3) {
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
-                            params[1] = "0";
+                            params[1] = "1";
                         }
                         if (params[2] == null || params[2].toString().trim().isEmpty()) {
                             params[2] = "0";
