@@ -57,7 +57,7 @@ public class AbstractConfig implements Config, AdminSpec, NodeSpec, WalletSpec, 
     protected int websocketServerPort;
     protected int maxShareCountPerChannel = 20;
     protected int awardEpoch = 0xf;
-    protected int waitEpoch = 32;
+    protected int waitEpoch = 1;
 
     // Foundation configuration
     protected String fundAddress;
