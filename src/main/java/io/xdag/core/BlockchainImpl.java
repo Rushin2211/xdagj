@@ -553,7 +553,7 @@ public class BlockchainImpl implements Blockchain {
                 txHistory.addAll(txHistoryStore.listTxHistoryByAddress(checkAddress(addressHashlow) ?
                         BasicUtils.hash2PubAddress(addressHashlow) : BasicUtils.hash2Address(addressHashlow), page, parameters));
             } catch (Exception e) {
-                log.error(e.getMessage(), e);
+                log.error("区块查询时日期转换异常被捕获！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！");
             }
         }
         return txHistory;

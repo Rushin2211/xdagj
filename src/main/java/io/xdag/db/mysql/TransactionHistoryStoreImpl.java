@@ -241,7 +241,7 @@ public class TransactionHistoryStoreImpl implements TransactionHistoryStore {
                 }
             }
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("数据库查询时出现异常**********************************************");
         } finally {
             DruidUtils.close(conn, pstmt, rs);
         }
