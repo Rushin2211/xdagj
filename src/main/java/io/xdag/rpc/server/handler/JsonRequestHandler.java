@@ -83,11 +83,13 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                 case "xdag_getBlockByHash" -> {
 //                    validateParams(params, "Missing block hash parameter");
                     if (params.length == 2) {
+                        log.info("222222222222222222222222222222222222222222222222222222222两个参数的，页数page = {}",params[1] == null || params[1].toString().trim().isEmpty()? -1 : Integer.parseInt(params[1].toString()));
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
                             params[1] = "0";
                         }
                         yield xdagApi.xdag_getBlockByHash(params[0].toString(), Integer.parseInt(params[1].toString()));
                     } else if (params.length == 3) {
+                        log.info("33333333333333333333333333333333333333333333333333333333三个参数的，page = {}， pageSize = {}",params[1] == null || params[1].toString().trim().isEmpty()? -1 : Integer.parseInt(params[1].toString()), params[2] == null || params[2].toString().trim().isEmpty()? -1 : Integer.parseInt(params[1].toString()));
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
                             params[1] = "0";
                         }
@@ -96,11 +98,22 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                         }
                         yield xdagApi.xdag_getBlockByHash(params[0].toString(), Integer.parseInt(params[1].toString()), Integer.parseInt(params[2].toString()));
                     } else if (params.length == 4) {
+                        log.info("444444444444444444444444444444444444444444444444444444444444四个参数的，page = {}, start = {}, end = {}",
+                                params[1] == null || params[1].toString().trim().isEmpty()? -1 : Integer.parseInt(params[1].toString()),
+                                params[2] == null ? "null" : params[2].toString(),
+                                params[3] == null ? "null" : params[2].toString()
+                                );
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
                             params[1] = "0";
                         }
                         yield xdagApi.xdag_getBlockByHash(params[0].toString(), Integer.parseInt(params[1].toString()), params[2].toString(), params[3].toString());
                     } else if (params.length == 5) {
+                        log.info("55555555555555555555555555555555555555555555555555555555555555555五个参数的,page = {}, start = {}, end = {}, pageSize = {}",
+                                params[1] == null || params[1].toString().trim().isEmpty()? -1 : Integer.parseInt(params[1].toString()),
+                                params[2] == null ? "null" : params[2].toString(),
+                                params[3] == null ? "null" : params[2].toString(),
+                                params[4] == null || params[1].toString().trim().isEmpty()? -1 : Integer.parseInt(params[1].toString())
+                                );
                         if (params[1] == null || params[1].toString().trim().isEmpty()) {
                             params[1] = "0";
                         }
