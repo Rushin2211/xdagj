@@ -145,7 +145,7 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                                 params[0] == null || params[0].toString().trim().isEmpty() ? -1 : Integer.parseInt(params[0].toString())
                         );
                     }
-                    //validateParams(params, "Missing block number parameter");
+                    validateParams(params, "Missing block number parameter");
                     if (params.length == 2) {
                         log.info("22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222两个参数的,height = {}, page = {}",
                                 params[0] == null || params[0].toString().trim().isEmpty() ? -1 : Integer.parseInt(params[0].toString()),
