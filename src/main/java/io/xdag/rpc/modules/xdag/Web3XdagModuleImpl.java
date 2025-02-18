@@ -72,11 +72,13 @@ public class Web3XdagModuleImpl implements Web3XdagModule {
 
     @Override
     public String xdag_protocolVersion() {
+        log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了获取协议版本的接口xdag_protocolVersion");
         return CLIENT_VERSION;
     }
 
     @Override
     public Object xdag_syncing() {
+        log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了接口xdag_syncing");
         long currentBlock = this.blockchain.getXdagStats().nmain;
         long highestBlock = Math.max(this.blockchain.getXdagStats().totalnmain, currentBlock);
         SyncingResult s = new SyncingResult();
@@ -115,6 +117,7 @@ public class Web3XdagModuleImpl implements Web3XdagModule {
 
     @Override
     public String xdag_blockNumber() {
+        log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了获取节点高度的接口xdag_blockNumber");
         long b = blockchain.getXdagStats().nmain;
         log.debug("xdag_blockNumber(): {}", b);
         return Long.toString(b);
@@ -122,6 +125,7 @@ public class Web3XdagModuleImpl implements Web3XdagModule {
 
     @Override
     public String xdag_getBalance(String address) {
+        log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了由地址获取余额的接口xdag_getBalance, address = {}", address);
         Bytes32 hash;
         MutableBytes32 key = MutableBytes32.create();
         String balance;
@@ -152,6 +156,7 @@ public class Web3XdagModuleImpl implements Web3XdagModule {
 
     @Override
     public StatusDTO xdag_getStatus() {
+        log.info("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS调用了获取节点状态的接口xdag_getStatus");
         XdagStats xdagStats = kernel.getBlockchain().getXdagStats();
         double hashrateOurs = BasicUtils.xdagHashRate(kernel.getBlockchain().getXdagExtStats().getHashRateOurs());
         double hashrateTotal = BasicUtils.xdagHashRate(kernel.getBlockchain().getXdagExtStats().getHashRateTotal());
@@ -178,6 +183,7 @@ public class Web3XdagModuleImpl implements Web3XdagModule {
 
     @Override
     public Object xdag_poolConfig() {
+        log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了获取矿池配置的接口xdag_poolConfig");
 //        PoolSpec poolSpec = kernel.getConfig().getPoolSpec();
         NodeSpec nodeSpec = kernel.getConfig().getNodeSpec();
         ConfigDTO.ConfigDTOBuilder configDTOBuilder = ConfigDTO.builder();
@@ -199,6 +205,7 @@ public class Web3XdagModuleImpl implements Web3XdagModule {
 
     @Override
     public Object xdag_netConnectionList() {
+        log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了获取连接列表的接口xdag_netConnectionList");
         List<NetConnDTO> netConnDTOList = Lists.newArrayList();
         NetConnDTO.NetConnDTOBuilder netConnDTOBuilder = NetConnDTO.builder();
         List<Channel> channelList = kernel.getChannelMgr().getActiveChannels();

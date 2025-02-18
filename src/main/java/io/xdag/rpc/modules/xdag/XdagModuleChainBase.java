@@ -33,11 +33,13 @@ import io.xdag.rpc.dto.BlockResultDTO.Link;
 import io.xdag.rpc.dto.BlockResultDTO.TxLink;
 import io.xdag.utils.BasicUtils;
 import io.xdag.utils.BytesUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 
 import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.List;
 
 import static io.xdag.cli.Commands.getStateByFlags;
@@ -52,7 +54,7 @@ import static io.xdag.utils.BasicUtils.*;
 import static io.xdag.utils.WalletUtils.checkAddress;
 import static io.xdag.utils.WalletUtils.toBase58;
 import static io.xdag.utils.XdagTime.xdagTimestampToMs;
-
+@Slf4j
 public class XdagModuleChainBase implements XdagModuleChain {
 
     private final Blockchain blockchain;
@@ -70,11 +72,34 @@ public class XdagModuleChainBase implements XdagModuleChain {
 
     @Override
     public BlockResultDTO getBlockByHash(String hash, int page, Object... parameters) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String start = "null";
+        String end = "null";
+        int pageSize;
+        if (parameters.length == 0) {
+            log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了由地址获取区块或者账户的接口getBlockByHash, 传递了两个参数, hash = {}, page = {}", hash, page);
+        } else if (parameters.length == 1) {
+            log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了由地址获取区块或者账户的接口getBlockByHash, 传递了三个参数, hash = {}, page = {}, pageSize = {}", hash, page, Integer.parseInt(parameters[0].toString()));
+        } else if (parameters.length == 2) {
+            start = parameters[0] == null || parameters[0].toString().trim().isEmpty()? "null" : parameters[0].toString();
+            end = parameters[1] == null || parameters[1].toString().trim().isEmpty()? "null" : parameters[1].toString();
+            log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了由地址获取区块或者账户的接口getBlockByHash, 传递了四个参数, hash = {}, page = {}, start = {}, end ={}", hash, page, start, end);
+        } else {
+            start = parameters[0] == null || parameters[0].toString().trim().isEmpty()? "null" : parameters[0].toString();
+            end = parameters[1] == null || parameters[1].toString().trim().isEmpty()? "null" : parameters[1].toString();
+            pageSize = parameters[2] == null || parameters[2].toString().trim().isEmpty()? -1 : Integer.parseInt(parameters[2].toString());
+            log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了由地址获取区块或者账户的接口getBlockByHash, 传递了五个参数, hash = {}, page = {}, start = {}, end ={}, pageSize = {}", hash, page, start, end, pageSize);
+        }
         return getBlockDTOByHash(hash, page, parameters);
     }
 
     @Override
     public BlockResultDTO getBlockByNumber(String bnOrId, int page, Object... parameters) {
+        if (parameters.length == 0) {
+            log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了getBlockByNumber的接口,传了两个参数, Height = {}, page = {}", Long.parseLong(bnOrId), page);
+        }else {
+            log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了getBlockByNumber的接口,传了三个参数, Height = {}, page = {}, pageSize = {}", Long.parseLong(bnOrId), page, Integer.parseInt(parameters[0].toString()));
+        }
         Block blockFalse = blockchain.getBlockByHeight(Long.parseLong(bnOrId));
         if (null == blockFalse) {
             return null;
@@ -99,6 +124,7 @@ public class XdagModuleChainBase implements XdagModuleChain {
 
     @Override
     public String getBalanceByNumber(String bnOrId) {
+        log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了由高度获取区块所剩余额的接口getBalanceByNumber, Height = {}", bnOrId);
         Block block = blockchain.getBlockByHeight(Long.parseLong(bnOrId));
         if (null == block) {
             return null;
@@ -108,6 +134,7 @@ public class XdagModuleChainBase implements XdagModuleChain {
 
     @Override
     public Object getBlocksByNumber(String numberReq) {
+        log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了获取一堆区块的接口getBlockSByNumber, num = {}", numberReq);
         try {
             int number = numberReq == null ? 20 : Integer.parseInt(numberReq);// default 20
             List<Block> blocks = blockchain.listMainBlocks(number);
