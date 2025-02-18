@@ -240,10 +240,13 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                     yield xdagApi.xdag_protocolVersion();
                 }
                 case "xdag_getBlocksByNumber" -> {
-                    validateParams(params, "Missing block number parameter");
+                    //validateParams(params, "Missing block number parameter");
                     log.info("****************************************************************************************调用了getBlocks方法, num = {}",
-                            params[1] == null || params[1].toString().trim().isEmpty()? -1 : Integer.parseInt(params[1].toString())
+                            params[0] == null || params[0].toString().trim().isEmpty()? -1 : Integer.parseInt(params[0].toString())
                             );
+                    if (params[0] == null || params[0].toString().trim().isEmpty()) {
+                        params[0] = "20";
+                    }
                     yield xdagApi.xdag_getBlocksByNumber(params[0].toString());
                 }
                 case "xdag_accounts" -> {
