@@ -199,6 +199,7 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                 }
                 case "xdag_netConnectionList" -> {
                     validateNoParams(params);
+                    log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了获取连接列表的接口xdag_netConnectionList");
                     yield xdagApi.xdag_netConnectionList();
                 }
                 case "xdag_netType" -> {
@@ -233,10 +234,12 @@ public class JsonRequestHandler implements JsonRpcRequestHandler {
                 }
                 case "xdag_syncing" -> {
                     validateNoParams(params);
+                    log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了接口xdag_syncing");
                     yield xdagApi.xdag_syncing();
                 }
                 case "xdag_protocolVersion" -> {
                     validateNoParams(params);
+                    log.info("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH调用了获取协议版本的接口xdag_protocolVersion");
                     yield xdagApi.xdag_protocolVersion();
                 }
                 case "xdag_getBlocksByNumber" -> {
