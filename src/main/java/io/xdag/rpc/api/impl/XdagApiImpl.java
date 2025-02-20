@@ -217,16 +217,16 @@ public class XdagApiImpl extends AbstractXdagLifecycle implements XdagApi {
 
     @Override
     public List<BlockResponse> xdag_getBlocksByNumber(String bnOrId) {
-        int number = bnOrId == null ? 20 : Integer.parseInt(bnOrId);// default 20
-        List<Block> blocks = blockchain.listMainBlocks(number);
-        List<BlockResponse> resultDTOS = Lists.newArrayList();
-        for (Block block : blocks){
-            BlockResponse dto = transferBlockToBriefBlockResultDTO(blockchain.getBlockByHash(block.getHash(), false));
-            if(dto != null){
-                resultDTOS.add(dto);
+            int number = bnOrId == null ? 20 : Integer.parseInt(bnOrId);// default 20
+            List<Block> blocks = blockchain.listMainBlocks(number);
+            List<BlockResponse> resultDTOS = Lists.newArrayList();
+            for (Block block : blocks){
+                BlockResponse dto = transferBlockToBriefBlockResultDTO(blockchain.getBlockByHash(block.getHash(), false));
+                if(dto != null){
+                    resultDTOS.add(dto);
+                }
             }
-        }
-        return resultDTOS;
+            return resultDTOS;
     }
 
     @Override

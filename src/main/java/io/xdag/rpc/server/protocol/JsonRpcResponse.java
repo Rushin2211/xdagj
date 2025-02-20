@@ -29,7 +29,7 @@ import io.xdag.rpc.error.JsonRpcError;
 import lombok.Getter;
 
 @Getter
-@JsonInclude(JsonInclude.Include.NON_NULL)
+
 public class JsonRpcResponse {
     // Getters and Setters
     @JsonProperty("jsonrpc")
@@ -40,34 +40,28 @@ public class JsonRpcResponse {
     
     @JsonProperty("result")
     private Object result;
-    
-    @JsonProperty("error")
-    private JsonRpcError error;
 
 
     public JsonRpcResponse(int id, Object result) {
-        this(id, result, null);
-    }
-
-    public JsonRpcResponse(int id, Object result, JsonRpcError error) {
         this.id = id;
-        this.result = error == null ? result : null;
-        this.error = error;
+        this.result = result;
     }
 
-    /**
-     * Creates an error response
-     * @param id the request id
-     * @param error the error object
-     * @return a new JsonRpcResponse with the error
-     * @throws IllegalArgumentException if error is null
-     */
-    public static JsonRpcResponse error(int id, JsonRpcError error) {
-        if (error == null) {
-            throw new IllegalArgumentException("Error cannot be null");
-        }
-        return new JsonRpcResponse(id, null, error);
-    }
+
+
+//    /**
+//     * Creates an error response
+//     * @param id the request id
+//     * @param error the error object
+//     * @return a new JsonRpcResponse with the error
+//     * @throws IllegalArgumentException if error is null
+//     */
+//    public static JsonRpcResponse error(int id, JsonRpcError error) {
+//        if (error == null) {
+//            throw new IllegalArgumentException("Error cannot be null");
+//        }
+//        return new JsonRpcResponse(id, null, error);
+//    }
 
     /**
      * Creates a success response
@@ -76,7 +70,7 @@ public class JsonRpcResponse {
      * @return a new JsonRpcResponse with the result
      */
     public static JsonRpcResponse success(int id, Object result) {
-        return new JsonRpcResponse(id, result, null);
+        return new JsonRpcResponse(id, result);
     }
 
     /**
@@ -85,7 +79,7 @@ public class JsonRpcResponse {
      * @return a new JsonRpcResponse without id
      */
     public static JsonRpcResponse notification(Object result) {
-        return new JsonRpcResponse(1, result, null);
+        return new JsonRpcResponse(1, result);
     }
 
 }
