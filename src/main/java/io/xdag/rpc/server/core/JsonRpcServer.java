@@ -32,6 +32,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpContentCompressor;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.logging.LogLevel;
@@ -89,10 +90,10 @@ public class JsonRpcServer {
             workerGroup = new NioEventLoopGroup(rpcSpec.getRpcHttpWorkerThreads());
 
             ServerBootstrap b = new ServerBootstrap();
+            b.option(ChannelOption.SO_REUSEADDR, true);
             b.group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .handler(new LoggingHandler(LogLevel.INFO))
-                    .childOption(ChannelOption.SO_KEEPALIVE, true)
                     .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         protected void initChannel(SocketChannel ch) {
@@ -107,6 +108,7 @@ public class JsonRpcServer {
                             p.addLast(new HttpServerCodec());
                             // HTTP message aggregator
                             p.addLast(new HttpObjectAggregator(rpcSpec.getRpcHttpMaxContentLength()));
+                            p.addLast(new HttpContentCompressor());
                             // CORS handler
                             p.addLast(new CorsHandler(rpcSpec.getRpcHttpCorsOrigins()));
                             // JSON-RPC handler

@@ -132,7 +132,7 @@ public class AbstractConfig implements Config, AdminSpec, NodeSpec, WalletSpec, 
     protected String rpcHttpCorsOrigins = "*";
     protected String  rpcHttpsCertFile;
     protected String rpcHttpsKeyFile;
-    protected int rpcHttpMaxContentLength = 1024 * 1024; // 1MB
+    protected int rpcHttpMaxContentLength = 1024 * 1024 * 5; // 5MB
 
     // RPC netty configuration
     protected int rpcHttpBossThreads = 1;
