@@ -90,7 +90,7 @@ public class CorsHandler extends ChannelInboundHandlerAdapter {
         }
 
         FullHttpResponse response = new DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1, 
+                HttpVersion.HTTP_1_1,
                 HttpResponseStatus.OK);
 
         response.headers()
@@ -117,14 +117,14 @@ public class CorsHandler extends ChannelInboundHandlerAdapter {
         FullHttpResponse response = new DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 HttpResponseStatus.FORBIDDEN);
-        
+
         if (origin != null && isOriginAllowed(origin)) {
             response.headers()
                     .set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN, origin)
                     .set(HttpHeaderNames.ACCESS_CONTROL_ALLOW_CREDENTIALS, "true")
                     .set(HttpHeaderNames.VARY, "Origin");
         }
-        
+
         response.headers().set(HttpHeaderNames.CONTENT_LENGTH, 0);
         ctx.writeAndFlush(response);
     }

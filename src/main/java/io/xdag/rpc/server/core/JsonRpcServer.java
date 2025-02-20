@@ -32,13 +32,10 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpObjectAggregator;
-import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.cors.CorsConfigBuilder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
-import io.netty.handler.ssl.SslContext;
-import io.netty.handler.ssl.SslContextBuilder;
 import io.xdag.config.spec.RPCSpec;
 import io.xdag.rpc.api.XdagApi;
 import io.xdag.rpc.server.handler.CorsHandler;
@@ -105,18 +102,20 @@ public class JsonRpcServer {
 //                            }
 
                             // HTTP codec
-                            p.addLast(new HttpServerCodec());
+                            p.addLast(new HttpRequestDecoder());
+                            p.addLast(new HttpResponseEncoder());
                             // HTTP message aggregator
                             p.addLast(new HttpObjectAggregator(rpcSpec.getRpcHttpMaxContentLength()));
                             p.addLast(new HttpContentCompressor());
                             // CORS handler
                             p.addLast(new CorsHandler(rpcSpec.getRpcHttpCorsOrigins()));
+
                             // JSON-RPC handler
                             p.addLast(new JsonRpcHandler(rpcSpec, handlers));
                         }
                     });
             log.info("---------HTTP Host:{}, HTTP Port:{}",rpcSpec.getRpcHttpHost(), rpcSpec.getRpcHttpPort());
-            channel = b.bind(InetAddress.getByName(rpcSpec.getRpcHttpHost()), rpcSpec.getRpcHttpPort()).sync().channel();
+            b.bind(InetAddress.getByName(rpcSpec.getRpcHttpHost()), rpcSpec.getRpcHttpPort()).sync();
         } catch (Exception e) {
             stop();
             throw new RuntimeException("Failed to start JSON-RPC server", e);
@@ -124,17 +123,7 @@ public class JsonRpcServer {
     }
 
     public void stop() {
-        if (channel != null) {
-            channel.close();
-            channel = null;
-        }
-        if (bossGroup != null) {
-            bossGroup.shutdownGracefully();
-            bossGroup = null;
-        }
-        if (workerGroup != null) {
-            workerGroup.shutdownGracefully();
-            workerGroup = null;
-        }
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
     }
 }
