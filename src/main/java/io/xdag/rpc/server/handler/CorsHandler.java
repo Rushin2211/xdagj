@@ -81,7 +81,7 @@ public class CorsHandler extends ChannelInboundHandlerAdapter {
             ctx.fireChannelRead(msg);
         }
     }
-
+    ///////////////////////////////////////////////////////////////////////////////
     private void handlePreflightRequest(ChannelHandlerContext ctx, HttpRequest request) {
         String origin = request.headers().get(HttpHeaderNames.ORIGIN);
         if (origin == null || !isOriginAllowed(origin)) {

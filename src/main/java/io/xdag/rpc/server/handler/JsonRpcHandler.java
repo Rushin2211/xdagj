@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -182,7 +183,12 @@ public class JsonRpcHandler extends SimpleChannelInboundHandler<FullHttpRequest>
                     .set(HttpHeaderNames.VARY, "Origin");
         }
 
-        ctx.writeAndFlush(response);
+//        ctx.writeAndFlush(response);
+        // Set connection to close after the response
+        response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+
+        // Send the response and close the connection
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }
 
     @Override
