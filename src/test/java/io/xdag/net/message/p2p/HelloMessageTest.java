@@ -50,7 +50,7 @@ public class HelloMessageTest {
         HelloMessage msg = new HelloMessage(config.getNodeSpec().getNetwork(), config.getNodeSpec().getNetworkVersion(),
                 peerId, 8001, config.getClientId(), config.getClientCapabilities().toArray(), 2,
                 SecureRandomProvider.publicSecureRandom().generateSeed(InitMessage.SECRET_LENGTH), key,
-                config.getEnableGenerateBlock(), config.getNodeTag());
+                config.getEnableGenerateBlock(), config.getNodeSpec().getNodeTag());
         assertTrue(msg.validate(config));
 
         msg = new HelloMessage(msg.getBody());
@@ -67,6 +67,6 @@ public class HelloMessageTest {
         assertEquals(config.getClientCapabilities(), CapabilityTreeSet.of(peer.getCapabilities()));
         assertEquals(2, peer.getLatestBlockNumber());
         assertEquals(config.getEnableGenerateBlock(), peer.isGenerateBlock());
-        assertEquals(config.getNodeTag(), peer.getNodeTag());
+        assertEquals(config.getNodeSpec().getNodeTag(), peer.getNodeTag());
     }
 }

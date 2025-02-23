@@ -131,21 +131,21 @@ public class XdagApiImpl extends AbstractXdagLifecycle implements XdagApi {
         }
     }
 
-    @Override
-    public String[] xdag_accounts() {
-        String[] accounts = {};
-        return accounts;
-    }
+//    @Override
+//    public String[] xdag_accounts() {
+//        String[] accounts = {};
+//        return accounts;
+//    }
 
-    @Override
-    public String xdag_sign(String addr, String data) {
-        return "a";
-    }
-
-    @Override
-    public String xdag_chainId() {
-        return TypeConverter.toJsonHex(new byte[]{(byte) 0x1});
-    }
+//    @Override
+//    public String xdag_sign(String addr, String data) {
+//        return "a";
+//    }
+//
+//    @Override
+//    public String xdag_chainId() {
+//        return TypeConverter.toJsonHex(new byte[]{(byte) 0x1});
+//    }
 
     @Override
     public BlockResponse xdag_getTransactionByHash(String hash, int page) {
@@ -161,10 +161,10 @@ public class XdagApiImpl extends AbstractXdagLifecycle implements XdagApi {
         return String.format("%s", block.getInfo().getAmount().toDecimal(9, XUnit.XDAG).toPlainString());
     }
 
-    @Override
-    public String xdag_sendTransaction(TransactionRequest request) {
-        return null;
-    }
+//    @Override
+//    public String xdag_sendTransaction(TransactionRequest request) {
+//        return null;
+//    }
 
     @Override
     public ConfigResponse xdag_poolConfig() {
@@ -175,10 +175,10 @@ public class XdagApiImpl extends AbstractXdagLifecycle implements XdagApi {
         return configResponseBuilder.build();
     }
 
-    @Override
-    public String xdag_getMaxXferBalance() {
-        return Commands.getBalanceMaxXfer(kernel);
-    }
+//    @Override
+//    public String xdag_getMaxXferBalance() {
+//        return Commands.getBalanceMaxXfer(kernel);
+//    }
 
     @Override
     public String xdag_protocolVersion() {

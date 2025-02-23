@@ -226,7 +226,7 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
         this.msgQueue.sendMessage(new HelloMessage(nodeSpec.getNetwork(), nodeSpec.getNetworkVersion(),
                 client.getPeerId(), client.getPort(), config.getClientId(), config.getClientCapabilities().toArray(),
                 chain.getLatestMainBlockNumber(), secret, client.getCoinbase(), config.getEnableGenerateBlock(),
-                config.getNodeTag()));
+                config.getNodeSpec().getNodeTag()));
     }
 
     protected void onHandshakeHello(HelloMessage msg) {
@@ -252,7 +252,7 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
         this.msgQueue.sendMessage(new WorldMessage(nodeSpec.getNetwork(), nodeSpec.getNetworkVersion(),
                 client.getPeerId(), client.getPort(), config.getClientId(), config.getClientCapabilities().toArray(),
                 chain.getLatestMainBlockNumber(), secret, client.getCoinbase(), config.getEnableGenerateBlock(),
-                config.getNodeTag()));
+                config.getNodeSpec().getNodeTag()));
 
         // handshake done
         onHandshakeDone(peer);
