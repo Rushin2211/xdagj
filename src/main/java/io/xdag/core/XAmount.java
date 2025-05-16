@@ -205,4 +205,11 @@ public class XAmount implements Comparable<XAmount> {
         return new XAmount(Math.addExact(a.nano, b.nano));
     }
 
+    public XAmount divide(long a) throws ArithmeticException {
+        if (a == 0) {
+            throw new ArithmeticException("Division by zero");
+        }
+        return new XAmount(this.nano / a);
+    }
+
 }
