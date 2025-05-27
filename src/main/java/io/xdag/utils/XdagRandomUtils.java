@@ -26,37 +26,57 @@ package io.xdag.utils;
 import org.apache.commons.rng.UniformRandomProvider;
 import org.apache.commons.rng.simple.RandomSource;
 
+import java.security.SecureRandom;
+
+/**
+ * Utility class for generating random numbers and bytes using XO-RO-SHI-RO-128-PP algorithm
+ */
 public class XdagRandomUtils {
 
+    /**
+     * Random number generator instance using XO-RO-SHI-RO-128-PP algorithm
+     */
     private final static UniformRandomProvider rng = RandomSource.XO_RO_SHI_RO_128_PP.create();
 
-    public static int nextInt() {
-        return rng.nextInt();
-    }
-
+    /**
+     * Generate a random integer between 0 (inclusive) and n (exclusive)
+     * @param n Upper bound (exclusive)
+     * @return Random integer value in [0, n)
+     */
     public static int nextInt(int n) {
         return rng.nextInt(n);
     }
 
-    public static long nextLong() {
-        return rng.nextLong();
-    }
-
+    /**
+     * Generate a random long between 0 (inclusive) and n (exclusive)
+     * @param n Upper bound (exclusive)
+     * @return Random long value in [0, n)
+     */
     public static long nextLong(long n) {
         return rng.nextLong(n);
     }
 
-    public static void nextBytes(byte[] bytes) {
-        rng.nextBytes(bytes);
-    }
-
-    public static void nextBytes(byte[] bytes, int start, int len) {
-        rng.nextBytes(bytes, start, len);
-    }
-
+    /**
+     * Create and return a new byte array filled with random bytes
+     * @param count Size of the byte array to create
+     * @return New byte array filled with random values
+     */
     public static byte[] nextNewBytes(int count) {
         final byte[] result = new byte[count];
         rng.nextBytes(result);
         return result;
     }
+
+    /**
+     * Create and return a random byte array
+     * @param count Size of the byte array to create
+     * @return Random byte array
+     */
+    public static byte[] generateRandomBytes(int count) {
+        SecureRandom secureRandom = new SecureRandom();
+        byte[] randomBytes = new byte[count];
+        secureRandom.nextBytes(randomBytes);
+        return randomBytes;
+    }
+
 }

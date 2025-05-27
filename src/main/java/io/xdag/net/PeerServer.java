@@ -29,18 +29,20 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.DefaultMessageSizeEstimator;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollEventLoopGroup;
-import io.netty.channel.kqueue.KQueueEventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.MultiThreadIoEventLoopGroup;
+import io.netty.channel.epoll.EpollIoHandler;
+import io.netty.channel.kqueue.KQueueIoHandler;
+import io.netty.channel.nio.NioIoHandler;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.NettyRuntime;
 import io.xdag.Kernel;
+import io.xdag.core.AbstractXdagLifecycle;
 import io.xdag.utils.NettyUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.SystemUtils;
 
 @Slf4j
-public class PeerServer {
+public class PeerServer extends AbstractXdagLifecycle {
     private final Kernel kernel;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
@@ -51,36 +53,56 @@ public class PeerServer {
         this.kernel = kernel;
     }
 
-    public void start() {
+    @Override
+    protected void doStart() {
         start(kernel.getConfig().getNodeSpec().getNodeIp(), kernel.getConfig().getNodeSpec().getNodePort());
+    }
+
+    @Override
+    protected void doStop() {
+        close();
     }
 
     public void start(String ip, int port) {
         try {
-
+            // Choose appropriate EventLoopGroup implementation based on OS
             if(SystemUtils.IS_OS_LINUX) {
-                bossGroup = new EpollEventLoopGroup();
-                workerGroup = new EpollEventLoopGroup(workerThreadPoolSize);
-            } else if(SystemUtils.IS_OS_MAC) {
-                bossGroup = new KQueueEventLoopGroup();
-                workerGroup = new KQueueEventLoopGroup(workerThreadPoolSize);
+                //bossGroup = new EpollEventLoopGroup(1); // Set boss thread count to 1
+                bossGroup = new MultiThreadIoEventLoopGroup(1, EpollIoHandler.newFactory());
+                workerGroup = new MultiThreadIoEventLoopGroup(workerThreadPoolSize, EpollIoHandler.newFactory());
 
+
+            } else if(SystemUtils.IS_OS_MAC) {
+                bossGroup = new MultiThreadIoEventLoopGroup(1, KQueueIoHandler.newFactory()); // Set boss thread count to 1
+                workerGroup = new MultiThreadIoEventLoopGroup(workerThreadPoolSize, KQueueIoHandler.newFactory());
             } else {
-                bossGroup = new NioEventLoopGroup();
-                workerGroup = new NioEventLoopGroup(workerThreadPoolSize);
+                bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory()); // Set boss thread count to 1
+                workerGroup = new MultiThreadIoEventLoopGroup(workerThreadPoolSize, NioIoHandler.newFactory());
             }
 
             ServerBootstrap b = NettyUtils.nativeEventLoopGroup(bossGroup, workerGroup);
+            
+            // Configure TCP parameters
             b.childOption(ChannelOption.TCP_NODELAY, true);
             b.childOption(ChannelOption.SO_KEEPALIVE, true);
             b.childOption(ChannelOption.MESSAGE_SIZE_ESTIMATOR, DefaultMessageSizeEstimator.DEFAULT);
             b.childOption(ChannelOption.CONNECT_TIMEOUT_MILLIS, kernel.getConfig().getNodeSpec().getConnectionTimeout());
+            
+            // Add logging handler
             b.handler(new LoggingHandler());
             b.childHandler(new XdagChannelInitializer(kernel, true, null));
+
             log.debug("Xdag Node start host:[{}:{}].", ip, port);
             channelFuture = b.bind(ip, port).sync();
         } catch (Exception e) {
             log.error("Xdag Node start error:{}.", e.getMessage(), e);
+            // Release resources on exception
+            if (bossGroup != null) {
+                bossGroup.shutdownGracefully();
+            }
+            if (workerGroup != null) {
+                workerGroup.shutdownGracefully(); 
+            }
         }
     }
 
@@ -88,8 +110,12 @@ public class PeerServer {
         if (channelFuture != null && channelFuture.channel().isOpen()) {
             try {
                 channelFuture.channel().close().sync();
-                workerGroup.shutdownGracefully();
-                bossGroup.shutdownGracefully();
+                if (workerGroup != null) {
+                    workerGroup.shutdownGracefully();
+                }
+                if (bossGroup != null) {
+                    bossGroup.shutdownGracefully();
+                }
                 log.debug("Xdag Node closed.");
             } catch (Exception e) {
                 log.error("Xdag Node close error:{}", e.getMessage(), e);

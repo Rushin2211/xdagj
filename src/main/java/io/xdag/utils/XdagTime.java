@@ -30,56 +30,67 @@ import org.apache.commons.lang3.time.FastDateFormat;
 public class XdagTime {
 
     /**
-     * 获取当前的xdag时间戳
+     * Get current XDAG timestamp
      */
     public static long getCurrentTimestamp() {
         long time_ms = System.currentTimeMillis();
-        double ms_tmp = (double) (time_ms << 10);
-        return (long) Math.ceil(ms_tmp / 1000 + 0.5);
+        return msToXdagtimestamp(time_ms);
     }
 
     /**
-     * 把毫秒转为xdag时间戳
+     * Convert milliseconds to XDAG timestamp
      */
     public static long msToXdagtimestamp(long ms) {
         double ms_tmp = (double) (ms << 10);
         return (long) Math.ceil(ms_tmp / 1000 + 0.5);
     }
 
+    /**
+     * Convert XDAG timestamp to milliseconds
+     */
     public static long xdagTimestampToMs(long timestamp) {
         return (timestamp * 1000) >> 10;
     }
 
     /**
-     * 获取该时间戳所属的epoch
+     * Get the epoch number for a given timestamp
      */
     public static long getEpoch(long time) {
         return time >> 16;
     }
 
     /**
-     * 获取时间戳所属epoch的最后一个时间戳 主要用于mainblock
+     * Get the last timestamp of the epoch for a given timestamp
+     * Mainly used for mainblock
      */
     public static long getEndOfEpoch(long time) {
         return time | 0xffff;
     }
 
     /**
-     * 获取当前时间所属epoch的最后一个时间戳
+     * Get the last timestamp of current epoch
      */
     public static long getMainTime() {
         return getEndOfEpoch(getCurrentTimestamp());
     }
 
-
+    /**
+     * Check if the timestamp is at the end of an epoch
+     */
     public static boolean isEndOfEpoch(long time) {
         return (time & 0xffff) == 0xffff;
     }
 
+    /**
+     * Get current epoch number
+     */
     public static long getCurrentEpoch() {
         return getEpoch(getCurrentTimestamp());
     }
 
+    /**
+     * Format date to string in "yyyy-MM-dd HH:mm:ss" pattern
+     */
     public static String format(Date date) {
         return FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss").format(date);
     }

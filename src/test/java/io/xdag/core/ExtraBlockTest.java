@@ -117,7 +117,7 @@ public class ExtraBlockTest {
         MockBlockchain blockchain = new MockBlockchain(kernel);
         ImportResult result = blockchain.tryToConnect(addressBlock);
         // import address block, result must be IMPORTED_BEST
-        assertSame(result, IMPORTED_BEST);
+        assertSame(IMPORTED_BEST, result);
         List<Address> pending = Lists.newArrayList();
         List<Block> extraBlockList = Lists.newLinkedList();
         Bytes32 ref = addressBlock.getHashLow();
@@ -131,7 +131,7 @@ public class ExtraBlockTest {
             long xdagTime = XdagTime.getEndOfEpoch(time);
             Block extraBlock = generateExtraBlock(config, poolKey, xdagTime, pending);
             result = blockchain.tryToConnect(extraBlock);
-            assertSame(result, IMPORTED_BEST);
+            assertSame(IMPORTED_BEST, result);
             ref = extraBlock.getHashLow();
             extraBlockList.add(extraBlock);
         }
@@ -165,7 +165,7 @@ public class ExtraBlockTest {
         MockBlockchain blockchain = new MockBlockchain(kernel);
         ImportResult result = blockchain.tryToConnect(addressBlock);
         // import address block, result must be IMPORTED_BEST
-        assertSame(result, IMPORTED_BEST);
+        assertSame(IMPORTED_BEST, result);
         blockchain.checkOrphan();
         List<Address> pending = Lists.newArrayList();
         List<Block> extraBlockList = Lists.newLinkedList();
@@ -180,7 +180,7 @@ public class ExtraBlockTest {
             long xdagTime = XdagTime.getEndOfEpoch(time);
             Block extraBlock = generateExtraBlock(config, poolKey, xdagTime, pending);
             result = blockchain.tryToConnect(extraBlock);
-            assertSame(result, IMPORTED_BEST);
+            assertSame(IMPORTED_BEST, result);
             blockchain.checkOrphan();
             ref = extraBlock.getHashLow();
             extraBlockList.add(extraBlock);
@@ -238,7 +238,8 @@ public class ExtraBlockTest {
         public void checkOrphan() {
             long nblk = this.getXdagStats().nnoref / 11;
             while (nblk-- > 0) {
-                Block linkBlock = createNewBlock(null, null, false, kernel.getConfig().getNodeSpec().getNodeTag(), XAmount.ZERO);
+                Block linkBlock = createNewBlock(null, null, false,
+                        kernel.getConfig().getNodeSpec().getNodeTag(), XAmount.ZERO, null);
                 linkBlock.signOut(kernel.getWallet().getDefKey());
                 ImportResult result = this.tryToConnect(linkBlock);
                 assertTrue(result == IMPORTED_BEST || result == IMPORTED_NOT_BEST);

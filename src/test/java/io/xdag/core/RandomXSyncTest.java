@@ -72,7 +72,7 @@ public class RandomXSyncTest {
     private long forkHeight;
 
     @Before
-    public void init() {
+    public void start() {
         RandomXConstants.SEEDHASH_EPOCH_TESTNET_BLOCKS = 64;
         RandomXConstants.RANDOMX_TESTNET_FORK_HEIGHT = 128;
         RandomXConstants.SEEDHASH_EPOCH_TESTNET_LAG = 4;
@@ -102,9 +102,6 @@ public class RandomXSyncTest {
 
         String kernel2Diff = kernel2.getBlockchain().getBlockByHeight(nmain - 1).getInfo().getDifficulty().toString(16);
         assertEquals(expected, kernel2Diff);
-
-        kernel1.getRandomx().randomXPoolReleaseMem();
-        kernel2.getRandomx().randomXPoolReleaseMem();
     }
 
     public void sync(Kernel kernel1, Kernel kernel2, long startTime, long endTime, String syncName) {
@@ -131,7 +128,7 @@ public class RandomXSyncTest {
 
         // 1. add address block
         result = kernel.getBlockchain().tryToConnect(addressBlock);
-        assertSame(result, IMPORTED_BEST);
+        assertSame(IMPORTED_BEST, result);
         assertArrayEquals(addressBlock.getHashLow().toArray(), xdagTopStatus.getTop());
         List<Block> extraBlockList = Lists.newLinkedList();
         Bytes32 ref = addressBlock.getHashLow();
@@ -149,7 +146,7 @@ public class RandomXSyncTest {
             long xdagTime = XdagTime.getEndOfEpoch(time);
             Block extraBlock = generateExtraBlock(config, key, xdagTime, pending);
             result = kernel.getBlockchain().tryToConnect(extraBlock);
-            assertSame(result, IMPORTED_BEST);
+            assertSame(IMPORTED_BEST, result);
             assertArrayEquals(extraBlock.getHashLow().toArray(), xdagTopStatus.getTop());
             Block storedExtraBlock = kernel.getBlockchain().getBlockByHash(Bytes32.wrap(xdagTopStatus.getTop()), false);
             assertArrayEquals(extraBlock.getHashLow().toArray(), storedExtraBlock.getHashLow().toArray());
@@ -214,7 +211,7 @@ public class RandomXSyncTest {
 
         MockBlockchain blockchain = new MockBlockchain(kernel);
         kernel.setBlockchain(blockchain);
-        randomX.init();
+        randomX.start();
 
         return kernel;
     }

@@ -72,8 +72,9 @@ public class NetTest {
         mutableBytes.set(0, Bytes.wrap(BytesUtils.longToBytes(nhosts, true)));
         mutableBytes.set(8, Bytes.wrap(BytesUtils.longToBytes(totalHosts, true)));
         mutableBytes.set(16, Bytes.wrap(netDB.getEncoded()));
-        assertEquals(mutableBytes.toHexString(),
-                "0x040000000000000004000000000000007f000001611e7f0000015f767f000001d49d7f000001b822000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+        assertEquals(
+            "0x040000000000000004000000000000007f000001611e7f0000015f767f000001d49d7f000001b822000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+            mutableBytes.toHexString());
 
     }
 
@@ -98,13 +99,7 @@ public class NetTest {
         stats.totalnhosts = 11;
         stats.maintime = endtime;
 
-        NetDB netDB = new NetDB();
-        netDB.addNewIP("10.0.0.1", 8001);
-        netDB.addNewIP("10.0.0.2", 8001);
-        netDB.addNewIP("10.0.0.3", 8001);
-        netDB.addNewIP("10.0.0.4", 8001);
-
-        SumRequestMessage sumRequestMessage = new SumRequestMessage(starttime, endtime, stats, netDB);
+        SumRequestMessage sumRequestMessage = new SumRequestMessage(starttime, endtime, stats);
 
         String hexString = Bytes.wrap(sumRequestMessage.getBody()).toHexString();
 

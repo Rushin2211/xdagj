@@ -223,10 +223,10 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
         this.timestamp = msg.getTimestamp();
 
         // send the HELLO message
-        this.msgQueue.sendMessage(new HelloMessage(nodeSpec.getNetwork(), nodeSpec.getNetworkVersion(), client.getPeerId(),
-                client.getPort(), config.getClientId(), config.getClientCapabilities().toArray(),
-                chain.getLatestMainBlockNumber(),
-                secret, client.getCoinbase()));
+        this.msgQueue.sendMessage(new HelloMessage(nodeSpec.getNetwork(), nodeSpec.getNetworkVersion(),
+                client.getPeerId(), client.getPort(), config.getClientId(), config.getClientCapabilities().toArray(),
+                chain.getLatestMainBlockNumber(), secret, client.getCoinbase(), config.getEnableGenerateBlock(),
+                config.getNodeTag()));
     }
 
     protected void onHandshakeHello(HelloMessage msg) {
@@ -248,12 +248,11 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
             msgQueue.disconnect(ReasonCode.INVALID_HANDSHAKE);
             return;
         }
-
         // send the WORLD message
-        this.msgQueue.sendMessage(new WorldMessage(nodeSpec.getNetwork(), nodeSpec.getNetworkVersion(), client.getPeerId(),
-                client.getPort(), config.getClientId(), config.getClientCapabilities().toArray(),
-                chain.getLatestMainBlockNumber(),
-                secret, client.getCoinbase()));
+        this.msgQueue.sendMessage(new WorldMessage(nodeSpec.getNetwork(), nodeSpec.getNetworkVersion(),
+                client.getPeerId(), client.getPort(), config.getClientId(), config.getClientCapabilities().toArray(),
+                chain.getLatestMainBlockNumber(), secret, client.getCoinbase(), config.getEnableGenerateBlock(),
+                config.getNodeTag()));
 
         // handshake done
         onHandshakeDone(peer);
@@ -331,17 +330,6 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
             return ReasonCode.BAD_NETWORK_VERSION;
         }
 
-        // not connected
-//        if (client.getPeerId().equals(peer.getPeerId()) || channelMgr.isActivePeer(peer.getPeerId())) {
-//            return ReasonCode.DUPLICATED_PEER_ID;
-//        }
-
-        // validator can't share IP address
-//        if (channelMgr.isActiveIP(channel.getRemoteIp()) // already connected
-//                && nodeSpec.getNetwork() == Network.MAINNET) { // on main net
-//            return ReasonCode.VALIDATOR_IP_LIMITED;
-//        }
-
         return null;
     }
 
@@ -403,7 +391,7 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
             SyncBlockMessage blockMsg = new SyncBlockMessage(block, 1);
             msgQueue.sendMessage(blockMsg);
         }
-        msgQueue.sendMessage(new BlocksReplyMessage(startTime, endTime, random, chain.getXdagStats(), netdbMgr.getNetDB()));
+        msgQueue.sendMessage(new BlocksReplyMessage(startTime, endTime, random, chain.getXdagStats()));
     }
 
     protected void processBlocksReply(BlocksReplyMessage msg) {
@@ -424,7 +412,7 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
         // TODO: paulochen 处理sum请求
         kernel.getBlockStore().loadSum(msg.getStarttime(),msg.getEndtime(),sums);
         SumReplyMessage reply = new SumReplyMessage(msg.getEndtime(), msg.getRandom(),
-                chain.getXdagStats(), sums, netdbMgr.getNetDB());
+                chain.getXdagStats(), sums);
         msgQueue.sendMessage(reply);
     }
 
@@ -475,8 +463,7 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
                 FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSS").format(XdagTime.xdagTimestampToMs(startTime)),
                 FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss.SSS").format(XdagTime.xdagTimestampToMs(endTime)),
                 channel.getRemoteAddress());
-        BlocksRequestMessage msg = new BlocksRequestMessage(startTime, endTime, chain.getXdagStats(),
-                netdbMgr.getNetDB());
+        BlocksRequestMessage msg = new BlocksRequestMessage(startTime, endTime, chain.getXdagStats());
         sendMessage(msg);
         return msg.getRandom();
     }
@@ -484,16 +471,15 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
     public long sendGetBlock(MutableBytes32 hash, boolean isOld) {
         XdagMessage msg;
         //        log.debug("sendGetBlock:[{}]", Hex.toHexString(hash));
-        msg = isOld ? new SyncBlockRequestMessage(hash, kernel.getBlockchain().getXdagStats(), netdbMgr.getNetDB())
-                : new BlockRequestMessage(hash, kernel.getBlockchain().getXdagStats(), netdbMgr.getNetDB());
+        msg = isOld ? new SyncBlockRequestMessage(hash, kernel.getBlockchain().getXdagStats())
+                : new BlockRequestMessage(hash, kernel.getBlockchain().getXdagStats());
         log.debug("Request block {} isold: {} from node {}", hash, isOld,channel.getRemoteAddress());
         sendMessage(msg);
         return msg.getRandom();
     }
 
     public long sendGetSums(long startTime, long endTime) {
-        SumRequestMessage msg = new SumRequestMessage(startTime, endTime, chain.getXdagStats(),
-                netdbMgr.getNetDB());
+        SumRequestMessage msg = new SumRequestMessage(startTime, endTime, chain.getXdagStats());
         sendMessage(msg);
         return msg.getRandom();
     }
@@ -507,7 +493,6 @@ public class XdagP2pHandler extends SimpleChannelInboundHandler<Message> {
         syncMgr.getIsUpdateXdagStats().compareAndSet(false, true);
         XdagStats remoteXdagStats = message.getXdagStats();
         chain.getXdagStats().update(remoteXdagStats);
-        netdbMgr.updateNetDB(message.getRemoteNetdb());
     }
 
 }

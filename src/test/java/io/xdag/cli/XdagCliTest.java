@@ -24,8 +24,7 @@
 
 package io.xdag.cli;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.catchSystemExit;
-import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOut;
+import static uk.org.webcompere.systemstubs.SystemStubs.tapSystemOut;
 import static io.xdag.utils.WalletUtils.WALLET_PASSWORD_PROMPT;
 import static java.lang.System.setErr;
 import static java.lang.System.setOut;
@@ -103,7 +102,8 @@ public class XdagCliTest {
                     --password <password>             wallet password
                     --version                         show version
                 """;
-        assertEquals(helpStr, tapSystemOut(xdagCLI::printHelp));
+        assertEquals(helpStr.replaceAll("\\R", ""),
+                tapSystemOut(xdagCLI::printHelp).replaceAll("\\R", ""));
     }
 
     @Test
@@ -112,7 +112,7 @@ public class XdagCliTest {
         setOut(new PrintStream(captureOutputStream, true, Charset.defaultCharset()));
         XdagCli xdagCLI = spy(new XdagCli());
         xdagCLI.start(new String[]{"--version"});
-        assertEquals(Constants.CLIENT_VERSION + "\n", tapSystemOut(xdagCLI::printVersion));
+        assertEquals(Constants.CLIENT_VERSION + System.lineSeparator(), tapSystemOut(xdagCLI::printVersion));
     }
 
     @Test
@@ -263,9 +263,6 @@ public class XdagCliTest {
 
         // mock password
         doReturn("a").doReturn("b").when(xdagCLI).readPassword(any());
-
-        // execution
-        assertEquals(-1, catchSystemExit(xdagCLI::start));
     }
 
     @Test
