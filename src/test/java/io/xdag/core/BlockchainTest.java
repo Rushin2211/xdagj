@@ -570,40 +570,162 @@ public void testExtraBlock() {
     assertEquals("0.0" , RollBackMainBlockLinkTxBalance_1.toDecimal(1, XUnit.XDAG).toString());//  rollback is zero
 }
 
-    @Test
-    public void DuplicateLink_Rollback(){
-        KeyPair addrKey = KeyPair.create(secretary_1, Sign.CURVE, Sign.CURVE_NAME);
-        KeyPair addrKey1 = KeyPair.create(secretary_2, Sign.CURVE, Sign.CURVE_NAME);
-        KeyPair poolKey = KeyPair.create(SampleKeys.SRIVATE_KEY, Sign.CURVE, Sign.CURVE_NAME);
+@Test
+public void DuplicateLink_Rollback(){
+    KeyPair addrKey = KeyPair.create(secretary_1, Sign.CURVE, Sign.CURVE_NAME);
+    KeyPair addrKey1 = KeyPair.create(secretary_2, Sign.CURVE, Sign.CURVE_NAME);
+    KeyPair poolKey = KeyPair.create(SampleKeys.SRIVATE_KEY, Sign.CURVE, Sign.CURVE_NAME);
 //        Date date = fastDateFormat.parse("2020-09-20 23:45:00");
-        long generateTime = 1600616700000L;
-        // 1. first block
-        Block addressBlock = generateAddressBlock(config, addrKey, generateTime);
-        MockBlockchain blockchain = new MockBlockchain(kernel);
-        blockchain.getAddressStore().updateBalance(Keys.toBytesAddress(poolKey), XAmount.of(1000, XUnit.XDAG));
-        ImportResult result = blockchain.tryToConnect(addressBlock);
-        // import address block, result must be IMPORTED_BEST
+    long generateTime = 1600616700000L;
+    // 1. first block
+    Block addressBlock = generateAddressBlock(config, addrKey, generateTime);
+    MockBlockchain blockchain = new MockBlockchain(kernel);
+    blockchain.getAddressStore().updateBalance(Keys.toBytesAddress(poolKey), XAmount.of(1000, XUnit.XDAG));
+    ImportResult result = blockchain.tryToConnect(addressBlock);
+    // import address block, result must be IMPORTED_BEST
+    assertSame(IMPORTED_BEST, result);
+    List<Address> pending = Lists.newArrayList();
+    List<Block> extraBlockList = Lists.newLinkedList();
+    Bytes32 ref = addressBlock.getHashLow();  //这个是链的创世区块
+    // 2. create 10 mainblocks
+    for (int i = 1; i <= 10; i++) {
+        generateTime += 64000L;
+        pending.clear();
+        pending.add(new Address(ref, XDAG_FIELD_OUT,false));//ref 为创世区块
+        pending.add(new Address(keyPair2Hash(wallet.getDefKey()),
+                XdagField.FieldType.XDAG_FIELD_COINBASE,
+                true));
+        long time = XdagTime.msToXdagtimestamp(generateTime);
+        long xdagTime = XdagTime.getEndOfEpoch(time);
+        Block extraBlock = generateExtraBlock(config, poolKey, xdagTime, pending);
+        result = blockchain.tryToConnect(extraBlock);
         assertSame(IMPORTED_BEST, result);
-        List<Address> pending = Lists.newArrayList();
-        List<Block> extraBlockList = Lists.newLinkedList();
-        Bytes32 ref = addressBlock.getHashLow();  //这个是链的创世区块
-        // 2. create 10 mainblocks
-        for (int i = 1; i <= 10; i++) {
-            generateTime += 64000L;
-            pending.clear();
-            pending.add(new Address(ref, XDAG_FIELD_OUT,false));//ref 为创世区块
-            pending.add(new Address(keyPair2Hash(wallet.getDefKey()),
-                    XdagField.FieldType.XDAG_FIELD_COINBASE,
-                    true));
-            long time = XdagTime.msToXdagtimestamp(generateTime);
-            long xdagTime = XdagTime.getEndOfEpoch(time);
-            Block extraBlock = generateExtraBlock(config, poolKey, xdagTime, pending);
-            result = blockchain.tryToConnect(extraBlock);
-            assertSame(IMPORTED_BEST, result);
-            assertChainStatus(i + 1, i - 1, 1, i < 2 ? 1 : 0, blockchain);
-            ref = extraBlock.getHashLow();   //更新ref为当前区块
-            extraBlockList.add(extraBlock);
+        assertChainStatus(i + 1, i - 1, 1, i < 2 ? 1 : 0, blockchain);
+        ref = extraBlock.getHashLow();   //更新ref为当前区块
+        extraBlockList.add(extraBlock);
+        if (i == 1) {
+            //The status of the previous block of the current block
+            assertEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the currently received block
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_REF);
+
+            //金额amount
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            //todo:此处是一个bug，因为若传过来的区块，显式的将余额设置了一个不等于0的数，网络都没做处理，比如这里，凭空自行设置的1000余额，很危险，需要修改共识来抵御这个bug，进入共识的区块是不允许有钱的，有没有钱也是共识执行后的结果
+            assertEquals("1000.0", blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+
+            //手续费fee
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(addressBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+
+            //最大难度指向maxDiffLink
+            assertArrayEquals(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getMaxDiffLink(), addressBlock.getHashLow().toArray());
+            assertNull(blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().getMaxDiffLink());
+
+            //ref指向,即该区块包含在哪个区块里面
+            assertNull(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getRef());
+            assertNull(blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().getRef());
+
+            assertChainStatus(2, 0, 1, 1, blockchain);
+        } else if (i == 2) {
+            //The status of the two blocks before the current block
+            assertNotEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the previous block of the current block
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the currently received block
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_REF);
+
+//                assertNotEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_OURS);
+            //金额amount
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            //todo:此处和上述的问题根源在一处，需要修改共识，此处正确的金额必须得是1024.0
+            assertEquals("2024.0", blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+
+            //手续费fee
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(addressBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+
+            //最大难度指向maxDiffLink
+            assertArrayEquals(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.getFirst().getHashLow().toArray());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().getMaxDiffLink(), addressBlock.getHashLow().toArray());
+            assertNull(blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().getMaxDiffLink());
+
+            //ref指向
+            assertNull(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getRef());
+            assertNull(blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().getRef());
+            assertArrayEquals(blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().getRef(), addressBlock.getHashLow().toArray());//主块ref指向自己，这里有别于链接块和交易块
+
+            assertChainStatus(3, 1, 1, 0, blockchain);
+        } else {
+            //The status of the two blocks before the current block
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the previous block of the current block
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the currently received block
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_REF);
+
+            //金额amount
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("1024.0", blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+
+            //手续费fee
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+
+            //最大难度指向maxDiffLink
+            assertArrayEquals(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(i - 2).getHashLow().toArray());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(i - 3).getHashLow().toArray());
+            if ( i == 3) {
+                assertArrayEquals(blockchain.getBlockByHash(extraBlockList.getFirst().getHashLow(), false).getInfo().getMaxDiffLink(), addressBlock.getHashLow().toArray());
+            } else {
+                assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(i - 4).getHashLow().toArray());
+            }
+
+            //ref指向
+            assertNull(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getRef());
+            assertNull(blockchain.getBlockByHash(extraBlockList.get(i - 2).getHashLow(), false).getInfo().getRef());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(i - 3).getHashLow(), false).getInfo().getRef(), extraBlockList.get(i - 3).getHashLow().toArray());
+
+            assertChainStatus(i + 1, i - 1, 1, 0, blockchain);
         }
+    }
+    assertChainStatus(11, 9, 1, 0, blockchain);
 
         //构造一笔交易，用于被两个块连续链接
         Address from = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(poolKey)), XDAG_FIELD_INPUT,true);
@@ -612,92 +734,323 @@ public void testExtraBlock() {
         Block txBlock = generateNewTransactionBlock(config, poolKey, xdagTime - 1, from, to, XAmount.of(100, XUnit.XDAG), UInt64.ONE);
 
 
-        // 4. local check
-        assertTrue(blockchain.canUseInput(txBlock));
-        assertTrue(blockchain.checkMineAndAdd(txBlock));
-        // 5. remote check
-        assertTrue(blockchain.canUseInput(new Block(txBlock.getXdagBlock())));
-        assertTrue(blockchain.checkMineAndAdd(txBlock));
-        result = blockchain.tryToConnect(txBlock);
-        Block c = blockchain.getBlockByHash(txBlock.getHashLow(),true);
-        // import transaction block, result may be IMPORTED_NOT_BEST or IMPORTED_BEST
-        assertTrue(result == IMPORTED_NOT_BEST || result == IMPORTED_BEST);
-        // there is 12 blocks ： 10 mainBlocks, 1 txBlock
-        assertChainStatus(12, 10, 1, 1, blockchain);
+    // 4. local check
+    assertTrue(blockchain.canUseInput(txBlock));
+    assertTrue(blockchain.checkMineAndAdd(txBlock));
+    // 5. remote check
+    assertTrue(blockchain.canUseInput(new Block(txBlock.getXdagBlock())));
+    assertTrue(blockchain.checkMineAndAdd(txBlock));
+    assertTrue(blockchain.canUseInput(txBlock));
+    result = blockchain.tryToConnect(txBlock);
+    Block c = blockchain.getBlockByHash(txBlock.getHashLow(),true);
+    // import transaction block, result is IMPORTED_NOT_BEST
+    assertSame(IMPORTED_NOT_BEST, result);
+
+    assertEquals(0, blockchain.getBlockByHash(txBlock.getHashLow(),false).getInfo().flags & BI_APPLIED);
+    assertEquals(0, blockchain.getBlockByHash(txBlock.getHashLow(),false).getInfo().flags & BI_MAIN_REF);
+    assertEquals(0, blockchain.getBlockByHash(txBlock.getHashLow(),false).getInfo().flags & BI_REF);
+    assertNull(blockchain.getBlockByHash(txBlock.getHashLow(),false).getInfo().getRef());
+    assertEquals("0.0", blockchain.getBlockByHash(txBlock.getHashLow(),false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+    assertEquals("0.1", blockchain.getBlockByHash(txBlock.getHashLow(),false).getFee().toDecimal(1, XUnit.XDAG).toString());//这种属于签名里面填了fee
+
+    // there is 12 blocks ： 10 mainBlocks, 1 txBlock
+    assertChainStatus(12, 10, 1, 1, blockchain);
 
 
-        pending.clear();
-        Address TxblockAddress = new Address(txBlock.getHashLow(),false);
-        pending.add(TxblockAddress);
-        ref = extraBlockList.get(extraBlockList.size() - 1).getHashLow();
-        //高度 11 主块链接交易块，第一次
+    pending.clear();
+    Address TxblockAddress = new Address(txBlock.getHashLow(),false);
+    pending.add(TxblockAddress);
+    ref = extraBlockList.get(extraBlockList.size() - 1).getHashLow();
+    //高度 12 主块链接交易块，第一次
+    generateTime += 64000L;
+    pending.add(new Address(ref, XDAG_FIELD_OUT,false));
+    pending.add(new Address(keyPair2Hash(wallet.getDefKey()),
+            XdagField.FieldType.XDAG_FIELD_COINBASE,
+            true));
+    long time = XdagTime.msToXdagtimestamp(generateTime);
+    xdagTime = XdagTime.getEndOfEpoch(time);
+    Block extraBlock = generateExtraBlock(config, poolKey, xdagTime, pending);
+
+    result = blockchain.tryToConnect(extraBlock);
+    assertSame(IMPORTED_BEST, result);
+
+    Bytes32 preHashLow = Bytes32.wrap(blockchain.getBlockByHash(extraBlock.getHashLow(),false).getInfo().getMaxDiffLink());
+    Bytes32 topTwoHashLow = Bytes32.wrap(blockchain.getBlockByHash(blockchain.getBlockByHash(preHashLow, false).getHashLow(),false).getInfo().getMaxDiffLink());
+    Block preBlock = blockchain.getBlockByHash(preHashLow,false);
+    Block topTwoBlock = blockchain.getBlockByHash(topTwoHashLow,false);
+    //The status of the two blocks before the current block
+    assertNotEquals(0, topTwoBlock.getInfo().flags & BI_APPLIED);
+    assertNotEquals(0, topTwoBlock.getInfo().flags & BI_MAIN_CHAIN);
+    assertNotEquals(0, topTwoBlock.getInfo().flags & BI_MAIN);
+    assertNotEquals(0, topTwoBlock.getInfo().flags & BI_MAIN_REF);
+    assertNotEquals(0, topTwoBlock.getInfo().flags & BI_REF);
+    //The status of the previous block of the current block
+    assertEquals(0, preBlock.getInfo().flags & BI_APPLIED);
+    assertNotEquals(0, preBlock.getInfo().flags & BI_MAIN_CHAIN);
+    assertEquals(0, preBlock.getInfo().flags & BI_MAIN);
+    assertEquals(0, preBlock.getInfo().flags & BI_MAIN_REF);
+    assertNotEquals(0, preBlock.getInfo().flags & BI_REF);
+    //The status of the currently received block
+    assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(),false).getInfo().flags & BI_APPLIED);
+    assertNotEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(),false).getInfo().flags & BI_MAIN_CHAIN);
+    assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(),false).getInfo().flags & BI_MAIN);
+    assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(),false).getInfo().flags & BI_MAIN_REF);
+    assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(),false).getInfo().flags & BI_REF);
+
+    //金额amount
+    assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+    assertEquals("0.0", preBlock.getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+    assertEquals("1024.0", topTwoBlock.getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+
+    //手续费fee
+    assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+    assertEquals("0.0", preBlock.getFee().toDecimal(1, XUnit.XDAG).toString());
+    assertEquals("0.0", topTwoBlock.getFee().toDecimal(1, XUnit.XDAG).toString());
+
+    //ref指向
+    assertNull(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getRef());
+    assertNull(preBlock.getInfo().getRef());
+    assertArrayEquals(topTwoBlock.getInfo().getRef(), topTwoBlock.getHashLow().toArray());
+
+    assertChainStatus(13, 10, 1, 1, blockchain);
+
+    extraBlockList.add(extraBlock);
+    pending.clear();
+
+
+//    List<Address> links = extraBlockList.get(10).getLinks();
+//    Set<String> linkset = new HashSet<>();
+//    for (Address link : links){  //将主块的链接块都放进Hashset里面，用于确认链接了交易块
+//        linkset.add(WalletUtils.toBase58(link.getAddress().slice(8, 20).toArray()));
+//    }
+//    //确认高度 11 主块链接了 交易块
+//    assertTrue(linkset.contains(WalletUtils.toBase58(TxblockAddress.getAddress().slice(8, 20).toArray())));
+
+    //确认高度 11 主块链接了 交易块
+    Bytes32 txHash = null;
+    List<Address> links = extraBlockList.get(10).getLinks();
+    for (Address link : links) {
+        if (link.getAddress().equals(txBlock.getHashLow())) {
+            txHash = txBlock.getHashLow();
+            break;
+        }
+    }
+    assertNotNull(txHash);
+
+    //为高度12的区块构造一笔属于它的交易：
+    from = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(poolKey)), XDAG_FIELD_INPUT,true);
+    Address to1 = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(addrKey1)), XDAG_FIELD_OUTPUT,true);
+    Block txBlock1 = generateNewTransactionBlock(config, poolKey, xdagTime - 2, from, to1, XAmount.of(10, XUnit.XDAG), UInt64.valueOf(2));
+    assertTrue(blockchain.canUseInput(txBlock1));
+    assertTrue(blockchain.checkMineAndAdd(txBlock1));
+    // 5. remote check
+    assertTrue(blockchain.canUseInput(new Block(txBlock1.getXdagBlock())));
+    assertTrue(blockchain.checkMineAndAdd(txBlock1));
+    result = blockchain.tryToConnect(txBlock1);
+    // import transaction block, result may be IMPORTED_NOT_BEST or IMPORTED_BEST
+    assertSame(IMPORTED_NOT_BEST, result);
+    assertEquals(0, blockchain.getBlockByHash(txBlock1.getHashLow(),false).getInfo().flags & BI_APPLIED);
+    assertEquals(0, blockchain.getBlockByHash(txBlock1.getHashLow(),false).getInfo().flags & BI_MAIN_REF);
+    assertEquals(0, blockchain.getBlockByHash(txBlock1.getHashLow(),false).getInfo().flags & BI_REF);
+    assertNull(blockchain.getBlockByHash(txBlock.getHashLow(),false).getInfo().getRef());
+    assertEquals("0.0", blockchain.getBlockByHash(txBlock1.getHashLow(),false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+    assertEquals("0.1", blockchain.getBlockByHash(txBlock1.getHashLow(),false).getFee().toDecimal(1, XUnit.XDAG).toString());//这种属于签名里面填了fee
+
+    assertChainStatus(14, 11, 1, 2, blockchain);
+
+
+
+    //高度 13 主块再次链接交易块，第二次
+    pending.add(TxblockAddress);
+    pending.add(new Address(txBlock1.getHashLow(),false));
+    ref = extraBlockList.get(extraBlockList.size() - 1).getHashLow();
+    for (int i = 1; i <= 16; i++) {
         generateTime += 64000L;
         pending.add(new Address(ref, XDAG_FIELD_OUT,false));
         pending.add(new Address(keyPair2Hash(wallet.getDefKey()),
                 XdagField.FieldType.XDAG_FIELD_COINBASE,
                 true));
-        long time = XdagTime.msToXdagtimestamp(generateTime);
+        time = XdagTime.msToXdagtimestamp(generateTime);
         xdagTime = XdagTime.getEndOfEpoch(time);
-        Block extraBlock = generateExtraBlock(config, poolKey, xdagTime, pending);
+        extraBlock = generateExtraBlock(config, poolKey, xdagTime, pending);
         blockchain.tryToConnect(extraBlock);
+        ref = extraBlock.getHashLow();
         extraBlockList.add(extraBlock);
         pending.clear();
+        if (i == 1) {
+            //The status of the two blocks before the current block
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the previous block of the current block
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the currently received block
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_REF);
+
+            //金额amount
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("1024.0", blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
 
 
-        List<Address> links = extraBlockList.get(10).getLinks();
-        Set<String> linkset = new HashSet<>();
-        for (Address link : links){  //将主块的链接块都放进Hashset里面，用于确认链接了交易块
-            linkset.add(WalletUtils.toBase58(link.getAddress().slice(8, 20).toArray()));
+            //手续费fee
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+
+            //最大难度指向maxDiffLink
+            assertArrayEquals(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(10).getHashLow().toArray());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(9).getHashLow().toArray());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(8).getHashLow().toArray());
+
+
+            //ref指向,即该区块包含在哪个区块里面
+            assertNull(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getRef());
+            assertNull(blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().getRef());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(9).getHashLow(), false).getInfo().getRef(), extraBlockList.get(9).getHashLow().toArray());
+
+            assertChainStatus(15, 11, 1, 1, blockchain);
+        } else if (i == 2) {
+            //The status of the two blocks before the current block
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the previous block of the current block
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the currently received block
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_REF);
+
+//                assertNotEquals(0, blockchain.getBlockByHash(addressBlock.getHashLow(), false).getInfo().flags & BI_OURS);
+            //金额amount
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            //todo:此处和上述的问题根源在一处，需要修改共识，此处正确的金额必须得是1024.0
+            assertEquals("1024.1", blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+
+            //手续费fee
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.1", blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+
+            //最大难度指向maxDiffLink
+            assertArrayEquals(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(11).getHashLow().toArray());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(10).getHashLow().toArray());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(9).getHashLow().toArray());
+
+            //ref指向
+            assertNull(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getRef());
+            assertNull(blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().getRef());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), false).getInfo().getRef(), extraBlockList.get(10).getHashLow().toArray());//主块ref指向自己，这里有别于链接块和交易块
+
+            assertChainStatus(16, 12, 1, 0, blockchain);
+        } else {
+            //The status of the two blocks before the current block
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the previous block of the current block
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getInfo().flags & BI_REF);
+            //The status of the currently received block
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+            assertNotEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+            assertEquals(0, blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().flags & BI_REF);
+
+            //金额amount
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            if (i == 3) {
+                assertEquals("1024.1", blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            } else {
+                assertEquals("1024.0", blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+            }
+
+            //手续费fee
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlock.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            if (i == 3) {
+                assertEquals("0.1", blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            } else {
+                assertEquals("0.0", blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+            }
+
+            //最大难度指向maxDiffLink
+            assertArrayEquals(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(11 + (i - 2)).getHashLow().toArray());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(11 + (i - 3)).getHashLow().toArray());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(11 + (i - 4)).getHashLow().toArray());
+
+            //ref指向
+            assertNull(blockchain.getBlockByHash(extraBlock.getHashLow(), false).getInfo().getRef());
+            assertNull(blockchain.getBlockByHash(extraBlockList.get(11 + (i - 2)).getHashLow(), false).getInfo().getRef());
+            assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(11 + (i - 3)).getHashLow(), false).getInfo().getRef(), extraBlockList.get(11 + (i - 3)).getHashLow().toArray());
+
+            assertChainStatus(i + 14, i + 10, 1, 0, blockchain);
         }
-        //确认高度 11 主块链接了 交易块
-        assertTrue(linkset.contains(WalletUtils.toBase58(TxblockAddress.getAddress().slice(8, 20).toArray())));
+    }
+    assertChainStatus(30, 26, 1, 0, blockchain);
+//    links = extraBlockList.get(11).getLinks();
+//    linkset = new HashSet<>();
+//    for (Address link : links){  //将主块的链接块都放进Hashset里面，用于确认链接了两个交易块
+//        linkset.add(WalletUtils.toBase58(link.getAddress().slice(8, 20).toArray()));
+//    }
+    //确认高度 12 主块链接了 两个交易块
+//    assertTrue(linkset.contains(WalletUtils.toBase58(TxblockAddress.getAddress().slice(8, 20).toArray())));
+//    assertTrue(linkset.contains(WalletUtils.toBase58(new Address(txBlock1.getHashLow(),false).getAddress().slice(8, 20).toArray())));
+    //16个块确认后，目前高度 11+16 = 27
 
-        //为高度12的去看构造一笔属于它的交易：
-        from = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(poolKey)), XDAG_FIELD_INPUT,true);
-        Address to1 = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(addrKey1)), XDAG_FIELD_OUTPUT,true);
-        Block txBlock1 = generateNewTransactionBlock(config, poolKey, xdagTime - 2, from, to1, XAmount.of(10, XUnit.XDAG), UInt64.valueOf(2));
-        assertTrue(blockchain.canUseInput(txBlock1));
-        assertTrue(blockchain.checkMineAndAdd(txBlock1));
-        // 5. remote check
-        assertTrue(blockchain.canUseInput(new Block(txBlock1.getXdagBlock())));
-        assertTrue(blockchain.checkMineAndAdd(txBlock1));
-        result = blockchain.tryToConnect(txBlock1);
-        // import transaction block, result may be IMPORTED_NOT_BEST or IMPORTED_BEST
-        assertTrue(result == IMPORTED_NOT_BEST || result == IMPORTED_BEST);
-
-        //高度 12 主块再次链接交易块，第二次
-        pending.add(TxblockAddress);
-        pending.add(new Address(txBlock1.getHashLow(),false));
-        ref = extraBlockList.get(extraBlockList.size() - 1).getHashLow();
-        for (int i = 1; i <= 16; i++) {
-            generateTime += 64000L;
-            pending.add(new Address(ref, XDAG_FIELD_OUT,false));
-            pending.add(new Address(keyPair2Hash(wallet.getDefKey()),
-                    XdagField.FieldType.XDAG_FIELD_COINBASE,
-                    true));
-            time = XdagTime.msToXdagtimestamp(generateTime);
-            xdagTime = XdagTime.getEndOfEpoch(time);
-            extraBlock = generateExtraBlock(config, poolKey, xdagTime, pending);
-            blockchain.tryToConnect(extraBlock);
-            ref = extraBlock.getHashLow();
-            extraBlockList.add(extraBlock);
-            pending.clear();
+    links = extraBlockList.get(11).getLinks();
+    Bytes32 hash0 = null;
+    Bytes32 hash1 = null;
+    for (Address link : links) {
+        if (link.getAddress().equals(txBlock.getHashLow())) {
+            hash0 = txBlock.getHashLow();
+        } else if (link.getAddress().equals(txBlock1.getHashLow())) {
+            hash1 = txBlock1.getHashLow();
         }
-        links = extraBlockList.get(11).getLinks();
-        linkset = new HashSet<>();
-        for (Address link : links){  //将主块的链接块都放进Hashset里面，用于确认链接了两个交易块
-            linkset.add(WalletUtils.toBase58(link.getAddress().slice(8, 20).toArray()));
-        }
-        //确认高度 12 主块链接了 两个交易块
-        assertTrue(linkset.contains(WalletUtils.toBase58(TxblockAddress.getAddress().slice(8, 20).toArray())));
-        assertTrue(linkset.contains(WalletUtils.toBase58(new Address(txBlock1.getHashLow(),false).getAddress().slice(8, 20).toArray())));
-        //16个块确认后，目前高度 11+16 = 27
+    }
+    assertNotNull(hash0);
+    assertNotNull(hash1);
 
-        //测试重复链接是否影响手续费收取
-        XAmount poolBalance = blockchain.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(poolKey));
-        XAmount addressBalance = kernel.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(addrKey));
-        XAmount addressBalance1 = kernel.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(addrKey1));
-        XAmount mainBlockLinkTxBalance = blockchain.getBlockByHash(extraBlockList.get(10).getHash(), false).getInfo().getAmount();
+    //确保重复引用的交易块txBlock，是在最先打包他的第12个主块里面执行的，且只执行了一次
+    assertNotEquals(0, blockchain.getBlockByHash(txBlock.getHashLow(), false).getInfo().flags & BI_APPLIED);
+    assertNotEquals(0, blockchain.getBlockByHash(txBlock1.getHashLow(), false).getInfo().flags & BI_APPLIED);
+    assertArrayEquals(blockchain.getBlockByHash(txBlock.getHashLow(), false).getInfo().getRef(), extraBlockList.get(10).getHashLow().toArray());
+    assertArrayEquals(blockchain.getBlockByHash(txBlock1.getHashLow(), false).getInfo().getRef(), extraBlockList.get(11).getHashLow().toArray());
+    assertArrayEquals(extraBlockList.get(10).getHashLow().toArray(), blockchain.getBlockByHeight(12).getHashLow().toArray());
+    assertArrayEquals(extraBlockList.get(11).getHashLow().toArray(), blockchain.getBlockByHeight(13).getHashLow().toArray());
+
+    //测试重复链接是否影响手续费收取
+    XAmount poolBalance = blockchain.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(poolKey));
+    XAmount addressBalance = kernel.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(addrKey));
+    XAmount addressBalance1 = kernel.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(addrKey1));
+    XAmount mainBlockLinkTxBalance = blockchain.getBlockByHash(extraBlockList.get(10).getHash(), false).getInfo().getAmount();
 
         assertEquals("890.00", poolBalance.toDecimal(2, XUnit.XDAG).toString());//1000 - 100 - 10 = 890.00
         assertEquals("99.90", addressBalance.toDecimal(2, XUnit.XDAG).toString());//100 - 0.1 = 99.90
@@ -712,13 +1065,27 @@ public void testExtraBlock() {
         XAmount mainBlock_doubleLink_Fee = kernel.getBlockStore().getBlockInfoByHash(extraBlockList.get(11).getHashLow()).getFee();
         assertEquals("0.1",mainBlock_doubleLink_Fee.toDecimal(1, XUnit.XDAG).toString());
 
-        //TODO:回滚重复链接的第12个主块，
-        blockchain.unSetMain(extraBlockList.get(11));
-        poolBalance = blockchain.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(poolKey));
-        addressBalance = kernel.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(addrKey));
-        assertEquals("900.00", poolBalance.toDecimal(2, XUnit.XDAG).toString());//890 + 10 = 900, 只回滚自己的交易，不回滚别的主块的交易
-        assertEquals("99.90", addressBalance.toDecimal(2, XUnit.XDAG).toString());//99.90 -99.90 = 0 只回滚自己的交易，不回滚别的主块的交易
-    }
+    //TODO:回滚重复链接的第13个主块，
+    blockchain.unSetMain(extraBlockList.get(11));
+    assertArrayEquals(extraBlockList.get(11).getHashLow().toArray(), blockchain.getBlockByHeight(13).getHashLow().toArray());
+
+    assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_APPLIED);
+    assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_MAIN_CHAIN);//直接手动回滚的，所以标志位未处理
+    assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_MAIN);
+    assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_MAIN_REF);
+    assertNotEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_REF);
+
+    assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().getMaxDiffLink(), blockchain.getBlockByHeight(12).getHashLow().toArray());//回滚最大难度链接是不会重置的
+    assertNull(blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().getRef());
+    assertEquals("0.0",blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().getAmount().toDecimal(1, XUnit.XDAG).toString());
+    assertEquals("0.0",blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+    assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().getHeight());
+
+    poolBalance = blockchain.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(poolKey));
+    addressBalance = kernel.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(addrKey));
+    assertEquals("900.00", poolBalance.toDecimal(2, XUnit.XDAG).toString());//890 + 10 = 900, 只回滚自己的交易，不回滚别的主块的交易
+    assertEquals("99.90", addressBalance.toDecimal(2, XUnit.XDAG).toString());//99.90 -99.90 = 0 只回滚自己的交易，不回滚别的主块的交易
+}
 
     @Test
     public void testTransaction_WithVariableFee() {
