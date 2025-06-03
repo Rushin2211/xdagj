@@ -219,7 +219,7 @@ public void testExtraBlock() {
     }
 
     @Test
-    public void testNew2NewTransactionBlock() {
+public void testNew2NewTransactionBlock() {
         KeyPair addrKey = KeyPair.create(secretary_1, Sign.CURVE, Sign.CURVE_NAME);
         KeyPair addrKey1 = KeyPair.create(secretary_2, Sign.CURVE, Sign.CURVE_NAME);
         KeyPair poolKey = KeyPair.create(SampleKeys.SRIVATE_KEY, Sign.CURVE, Sign.CURVE_NAME);
@@ -387,9 +387,16 @@ public void testExtraBlock() {
     assertEquals("99.90", addressBalance.toDecimal(2, XUnit.XDAG).toString());//100 - 0.1 = 99.90
     assertEquals("1024.1" , mainBlockLinkTxBalance.toDecimal(1, XUnit.XDAG).toString());//A mainBlock link a TX get 1024 + 0.1 reward.
     XAmount mainBlockFee = kernel.getBlockStore().getBlockInfoByHash(extraBlockList.get(10).getHashLow()).getFee();
+    XAmount mainBlockFee2 = blockchain.getBlockByHash(extraBlockList.get(10).getHash(), false).getFee();
     assertEquals("0.1",mainBlockFee.toDecimal(1, XUnit.XDAG).toString());
+    assertEquals("0.1",mainBlockFee2.toDecimal(1, XUnit.XDAG).toString());
 
-    blockchain.unSetMain(extraBlockList.get(10));//test rollback
+    Block height12 = blockchain.getBlockByHash(extraBlockList.get(10).getHashLow(), true);
+    BlockInfo info = kernel.getBlockStore().getBlockInfo(extraBlockList.get(10).getHashLow());
+    if (info != null) {
+        height12.getInfo().setFee(info.getFee());
+    }
+    blockchain.unSetMain(height12);//test rollback
     assertChainStatus(28, 24, 1, 0, blockchain);
     //为了避免手动回滚导致的局部回滚而造成的高度覆盖，这里手动将nmain个数加1，避免后续覆盖
     blockchain.getXdagStats().nmain++;
@@ -406,8 +413,10 @@ public void testExtraBlock() {
     XAmount RollBackPoolBalance = blockchain.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(poolKey));
     XAmount RollBackAddressBalance = kernel.getAddressStore().getBalanceByAddress(Keys.toBytesAddress(addrKey));
     XAmount RollBackMainBlockLinkTxBalance = blockchain.getBlockByHash(extraBlockList.get(10).getHash(), false).getInfo().getAmount();
+    XAmount mainFee = blockchain.getBlockByHash(extraBlockList.get(10).getHash(), false).getFee();
     assertEquals("1000.00", RollBackPoolBalance.toDecimal(2, XUnit.XDAG).toString());//rollback 900 + 100 = 1000
     assertEquals("0.00", RollBackAddressBalance.toDecimal(2, XUnit.XDAG).toString());//rollback 99.9 -99.9 = 0
+    assertEquals("0.0", mainFee.toDecimal(1, XUnit.XDAG).toString());
     assertEquals("0.0" , RollBackMainBlockLinkTxBalance.toDecimal(1, XUnit.XDAG).toString());//A mainBlock reward back 1024 - 1024 = 0.
 
 
@@ -541,19 +550,24 @@ public void testExtraBlock() {
         assertNotEquals(0, blockchain.getBlockByHash(tx.getHashLow(), false).getInfo().flags & BI_APPLIED);
         if (i == 0) {
             //todo:0.8.0版本的手续费，扣减没有问题，但是最后写在info里的有问题，此处先用0.1，后续修改代码后需要回来修改成正确的0.2
-            assertEquals("0.1", blockchain.getBlockByHash(tx.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());//这是代码里处理的失误的地方
+            assertEquals("0.2", blockchain.getBlockByHash(tx.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());//这是代码里处理的失误的地方
         } else {
             assertEquals("0.1", blockchain.getBlockByHash(tx.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
         }
     }
 
     //TODO:test rollback
-    blockchain.unSetMain(extraBlockList.get(26));
+    Block height28 = blockchain.getBlockByHash(extraBlockList.get(26).getHashLow(), true);
+    info = kernel.getBlockStore().getBlockInfo(extraBlockList.get(26).getHashLow());
+    if (info != null) {
+        height28.getInfo().setFee(info.getFee());
+    }
+    blockchain.unSetMain(height28);
 
     for (Block unwindTx : txList) {
         assertEquals(0, blockchain.getBlockByHash(unwindTx.getHashLow(), false).getInfo().flags & BI_APPLIED);
         //todo:0.8.0里面，交易执行和回退后，交易块里面的fee的记录均不是正确的，所以需要修改，这里先为了通过测试写0.1，后续改好后，这里需要改为0.0并通过测试才行
-        assertEquals("0.1", blockchain.getBlockByHash(unwindTx.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
+        assertEquals("0.0", blockchain.getBlockByHash(unwindTx.getHashLow(), false).getFee().toDecimal(1, XUnit.XDAG).toString());
     }
     assertNull(blockchain.getBlockByHash(extraBlockList.get(26).getHashLow(), false).getInfo().getRef());
     assertArrayEquals(blockchain.getBlockByHash(extraBlockList.get(26).getHashLow(), false).getInfo().getMaxDiffLink(), extraBlockList.get(25).getHashLow().toArray());
@@ -727,11 +741,11 @@ public void DuplicateLink_Rollback(){
     }
     assertChainStatus(11, 9, 1, 0, blockchain);
 
-        //构造一笔交易，用于被两个块连续链接
-        Address from = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(poolKey)), XDAG_FIELD_INPUT,true);
-        Address to = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(addrKey)), XDAG_FIELD_OUTPUT,true);
-        long xdagTime = XdagTime.getEndOfEpoch(XdagTime.msToXdagtimestamp(generateTime));
-        Block txBlock = generateNewTransactionBlock(config, poolKey, xdagTime - 1, from, to, XAmount.of(100, XUnit.XDAG), UInt64.ONE);
+    //构造一笔交易，用于被两个块连续链接
+    Address from = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(poolKey)), XDAG_FIELD_INPUT,true);
+    Address to = new Address(BytesUtils.arrayToByte32(Keys.toBytesAddress(addrKey)), XDAG_FIELD_OUTPUT,true);
+    long xdagTime = XdagTime.getEndOfEpoch(XdagTime.msToXdagtimestamp(generateTime));
+    Block txBlock = generateNewTransactionBlock(config, poolKey, xdagTime - 1, from, to, XAmount.of(100, XUnit.XDAG), UInt64.ONE);
 
 
     // 4. local check
@@ -1066,7 +1080,13 @@ public void DuplicateLink_Rollback(){
         assertEquals("0.1",mainBlock_doubleLink_Fee.toDecimal(1, XUnit.XDAG).toString());
 
     //TODO:回滚重复链接的第13个主块，
-    blockchain.unSetMain(extraBlockList.get(11));
+//    blockchain.unSetMain(extraBlockList.get(11));
+    Block height13 = blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), true);
+    BlockInfo info = kernel.getBlockStore().getBlockInfo(extraBlockList.get(11).getHashLow());
+    if (info != null) {
+        height13.getInfo().setFee(info.getFee());
+    }
+    blockchain.unSetMain(height13);
     assertArrayEquals(extraBlockList.get(11).getHashLow().toArray(), blockchain.getBlockByHeight(13).getHashLow().toArray());
 
     assertEquals(0, blockchain.getBlockByHash(extraBlockList.get(11).getHashLow(), false).getInfo().flags & BI_APPLIED);

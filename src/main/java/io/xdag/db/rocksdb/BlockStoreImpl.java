@@ -568,7 +568,34 @@ public class BlockStoreImpl implements BlockStore {
                 log.error(e.getMessage(), e);
             }
         }
-        return new Block(blockInfo);
+        Block block = new Block(blockInfo);
+        if (blockSource.get(hashlow.toArray()) == null) {
+//            log.error("No block origin data");
+            return block;
+        } else {
+            block.setXdagBlock(new XdagBlock(blockSource.get(hashlow.toArray())));
+            return block;
+        }
+    }
+
+    public BlockInfo getBlockInfo(Bytes32 hashlow) {
+        if (!hasBlockInfo(hashlow)) {
+            return null;
+        }
+        BlockInfo blockInfo = null;
+        byte[] value = indexSource.get(BytesUtils.merge(HASH_BLOCK_INFO, hashlow.toArray()));
+        if (value == null) {
+            return null;
+        } else {
+            try {
+                blockInfo = (BlockInfo) deserialize(value, BlockInfo.class);
+            } catch (DeserializationException e) {
+                log.error("hash low:{}", hashlow.toHexString());
+                log.error("can't deserialize data:{}", Hex.toHexString(value));
+                log.error(e.getMessage(), e);
+            }
+            return blockInfo;
+        }
     }
 
     public boolean isSnapshotBoot() {
