@@ -100,4 +100,12 @@ public interface Blockchain {
 
     // Get extended XDAG network statistics
     XdagExtStats getXdagExtStats();
+
+    XAmount outPutLimit(Block block);
+
+    int outPutNum(Block block);
+
+    XAmount getTxFee(Block block);
+
+    boolean isTxBlock(Block block);
 }

@@ -297,6 +297,13 @@ public class BlockchainImpl implements Blockchain {
                 updateBlockFlag(block, BI_EXTRA, true);
             }
 
+            if (isTxBlock(block) && XAmount.ZERO.compareTo(getTxFee(block)) == 0) {
+                result = ImportResult.INVALID_BLOCK;
+                result.setErrorInfo("There is a problem with the transaction fee of this transaction block");
+                log.debug("Block's fee is illegal");
+                return result;
+            }
+
             // Validate block references
             List<Address> all = block.getLinks().stream().distinct().toList();
             int inputFieldCounter = 0;
@@ -354,7 +361,7 @@ public class BlockchainImpl implements Blockchain {
                         return result;
                     }
                     // Ensure TX block's input's & output's amount is enough to subtract minGas, Amount must >= 0.1
-                    if (ref != null && (ref.getType() == XDAG_FIELD_INPUT || ref.getType() == XDAG_FIELD_OUTPUT) && ref.getAmount().subtract(MIN_GAS).isNegative()) {
+                    if (ref != null && (ref.getType() == XDAG_FIELD_INPUT || ref.getType() == XDAG_FIELD_OUTPUT) && ref.getAmount().subtract(outPutLimit(block)).isNegative()) {
                         result = ImportResult.INVALID_BLOCK;
                         result.setHashlow(ref.getAddress());
                         result.setErrorInfo("Ref block's balance < minGas");
@@ -538,8 +545,10 @@ public class BlockchainImpl implements Blockchain {
             XAmount fee = XAmount.of(header.getLong(24, ByteOrder.LITTLE_ENDIAN), XUnit.NANO_XDAG);
             if (fee.compareTo(XAmount.ZERO) == 0) {
                 return MIN_GAS.multiply(outPutNum(block));
-            } else if (fee.isNegative() || fee.compareTo(MIN_GAS.multiply(outPutNum(block))) < 0) {
+            } else if (fee.isNegative()) {
                 return XAmount.ZERO;
+            } else if (fee.compareTo(MIN_GAS.multiply(outPutNum(block))) < 0) {
+                return MIN_GAS.multiply(outPutNum(block));
             } else {
                 return fee;
             }
@@ -595,7 +604,7 @@ public class BlockchainImpl implements Blockchain {
         int num = outPutNum(block);
         if (num == -1) {
             return XAmount.ZERO;
-        } else if (MIN_GAS.compareTo(allFee.divide(num)) < 0) {
+        } else if (MIN_GAS.compareTo(allFee.divide(num)) > 0) {
             return XAmount.ZERO;
         } else {
             return allFee.divide(num);
