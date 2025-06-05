@@ -37,12 +37,12 @@ public class JsonRpcErrorResponse {
     private String jsonrpc = "2.0";
 
     @JsonProperty("id")
-    private int id;
+    private Object id;
 
     @JsonProperty("error")
     private JsonRpcError error;
 
-    public JsonRpcErrorResponse(int id, JsonRpcError error) {
+    public JsonRpcErrorResponse(Object id, JsonRpcError error) {
         this.id = id;
         this.error = error;
     }
