@@ -1,6 +1,10 @@
 #!/bin/sh
 
-ulimit -n unlimited
+MAX_FD=$(ulimit -Hn)
+
+if ! ulimit -n "$MAX_FD" >/dev/null 2>&1; then
+    echo "Warning: Unable to set file descriptor limit to $MAX_FD (consider running as root or adjusting system limits)"
+fi
 
 XDAG_VERSION="${project.version}"
 XDAG_JARNAME="xdagj-${XDAG_VERSION}-executable.jar"
